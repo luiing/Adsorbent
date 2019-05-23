@@ -79,15 +79,15 @@
     implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlin_version"
     implementation "com.android.support:recyclerview-v7:$supportVer"
     
-    maven {url 'https://dl.bintray.com/sweet/maven'}
 
-``` 项目中使用的是compileOnly,使用者需自行加入外部依赖库,请加上私有仓储 ```
+``` 项目中使用的是compileOnly,使用者需自行加入外部依赖库 ```
 
 ### VERSION
 
 Version|Descipt|Fixed|Time
 ----|----|----|----
-0.1.0|初始版本| |2019/05/23
+0.1.1|初始版本| |2019/05/23
+0.1.2|fixed快速滑动联动效果| |2019/05/24
 
 
 ### LICENSE
