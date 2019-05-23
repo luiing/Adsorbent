@@ -19,6 +19,8 @@ abstract class SingleAdsorbentListener : RecyclerView.OnScrollListener(){
     abstract fun getPinView(): View
     /** 获取吸顶View在RecyclerView中的位置*/
     abstract fun getPinViewPosition():Int
+    /** 吸顶的时候 停止滚动并定位在吸顶位置*/
+    fun stopWhenAdsorbent():Boolean = true
 
     fun getPinViewLayoutParam():ViewGroup.LayoutParams =
         ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT,ViewGroup.LayoutParams.WRAP_CONTENT)
@@ -33,7 +35,7 @@ abstract class SingleAdsorbentListener : RecyclerView.OnScrollListener(){
             //Log.e("xx", "first=$first, vertically down=$down, up=$up, dy=$dy")
             val position = getPinViewPosition()
             if (first >= position && dy > 0) {
-                addPin2Ui()
+                addPin2Ui(recyclerView,position)
             } else if (position in (first + 1)..last) {
                 addPin2ViewHolder(recyclerView,position-first)
             }
@@ -41,10 +43,15 @@ abstract class SingleAdsorbentListener : RecyclerView.OnScrollListener(){
     }
 
     /** 吸顶*/
-    private fun addPin2Ui(){
+    private fun addPin2Ui(recyclerView: RecyclerView,position :Int){
         val uiView = getUiViewGroup()
         val pinView = getPinView()
         if(uiView.indexOfChild(pinView) < 0){
+        /** 吸顶的时候 停靠在吸顶viewholder位置，符合吸顶习惯*/
+            if(stopWhenAdsorbent()) {
+                recyclerView.stopScroll()
+                recyclerView.scrollToPosition(position)
+            }
             val p = pinView.parent
             if(p is ViewGroup){
                 p.removeView(pinView)
