@@ -1,4 +1,4 @@
-apply plugin: 'com.android.application'
+apply plugin: 'com.android.library'
 apply plugin: 'kotlin-android'
 apply plugin: 'kotlin-android-extensions'
 
@@ -6,14 +6,10 @@ android {
     compileSdkVersion compileVer
     buildToolsVersion buildToolsVer
     defaultConfig {
-        applicationId "com.uis.groupadater.demo"
         minSdkVersion minSdkVer
         targetSdkVersion targetVer
         versionCode 1
         versionName "1.0"
-        //ndk{
-             //abiFilters 'x86'//'armeabi-v7a'
-        //}
     }
 
     buildTypes {
@@ -27,8 +23,9 @@ android {
 
 dependencies {
     implementation fileTree(dir: 'libs', include: ['*.jar'])
-    implementation 'com.android.support:support-v4:'+supportVer
-    implementation 'com.android.support:appcompat-v7:'+supportVer
-    implementation 'com.android.support:recyclerview-v7:'+supportVer
-    implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlin_version"
+    compileOnly 'com.android.support:recyclerview-v7:'+supportVer
+    compileOnly "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlin_version"
 }
+
+
+//apply from: '../../../bintray.gradle'

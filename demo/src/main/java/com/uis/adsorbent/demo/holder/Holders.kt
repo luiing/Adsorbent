@@ -1,4 +1,10 @@
-package com.uis.groupadater.demo.holder
+/*
+ * Copyright (c) 2019 by uis
+ * Author: uis
+ * Github: https://github.com/luiing
+ */
+
+package com.uis.adsorbent.demo.holder
 
 import android.support.v4.view.ViewPager
 import android.support.v7.widget.LinearLayoutManager
@@ -29,11 +35,11 @@ class DemoGroupAdapter : GroupAdapter(){
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): GroupHolder<out Any>{
         return when(viewType){
             VT_TXT_LARGE -> TxtLargeVH(parent)
-            VT_TXT_BLUE  -> TxtBlueVH(parent)
-            VT_PIN      -> PinVH(parent)
+            VT_TXT_BLUE -> TxtBlueVH(parent)
+            VT_PIN -> PinVH(parent)
             VT_VIEWPAGER -> ViewPagerVH(parent)
             VT_RECYCLER -> RecyclerVH(parent)
-            VT_PIN_SINGLE ->PinSingleVH(parent)
+            VT_PIN_SINGLE -> PinSingleVH(parent)
             else         -> TxtVH(parent)
         }
     }

@@ -1,8 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
-<com.uis.groupadater.demo.adsorbent.ChildRecyclerView
+<!--
+  ~ Copyright (c) 2019 by uis
+  ~ Author: uis
+  ~ Github: https://github.com/luiing
+  -->
+
+<com.uis.adsorbent.ChildRecyclerView
     xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:id="@+id/recyclerview"
     >
-</com.uis.groupadater.demo.adsorbent.ChildRecyclerView>
+</com.uis.adsorbent.ChildRecyclerView>

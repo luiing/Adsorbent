@@ -1,11 +1,18 @@
-package com.uis.groupadater.demo
+/*
+ * Copyright (c) 2019 by uis
+ * Author: uis
+ * Github: https://github.com/luiing
+ */
+
+package com.uis.adsorbent.demo
 
 import android.os.Bundle
 import android.support.v7.app.AppCompatActivity
 import android.support.v7.widget.LinearLayoutManager
 import android.view.View
+import com.uis.adsorbent.demo.holder.*
 import com.uis.groupadapter.GroupEntity
-import com.uis.groupadater.demo.holder.*
+import com.uis.groupadater.demo.R
 import kotlinx.android.synthetic.main.ui_demo.*
 import kotlinx.android.synthetic.main.ui_view_pin.view.*
 
