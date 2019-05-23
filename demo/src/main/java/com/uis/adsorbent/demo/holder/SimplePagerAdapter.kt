@@ -1,12 +1,18 @@
-package com.uis.groupadater.demo.holder
+/*
+ * Copyright (c) 2019 by uis
+ * Author: uis
+ * Github: https://github.com/luiing
+ */
+
+package com.uis.adsorbent.demo.holder
 
 import android.support.v4.view.PagerAdapter
 import android.support.v7.widget.LinearLayoutManager
 import android.support.v7.widget.RecyclerView
 import android.view.View
 import android.view.ViewGroup
+import com.uis.adsorbent.ChildRecyclerView
 import com.uis.groupadapter.GroupEntity
-import com.uis.groupadater.demo.adsorbent.ChildRecyclerView
 import java.util.*
 
 class SimplePagerAdapter : PagerAdapter(){

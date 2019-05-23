@@ -1,4 +1,10 @@
-package com.uis.groupadater.demo.adsorbent
+/*
+ * Copyright (c) 2019 by uis
+ * Author: uis
+ * Github: https://github.com/luiing
+ */
+
+package com.uis.adsorbent
 
 import android.support.v7.widget.LinearLayoutManager
 import android.support.v7.widget.RecyclerView

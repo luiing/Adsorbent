@@ -1,4 +1,10 @@
-package com.uis.groupadater.demo.adsorbent
+/*
+ * Copyright (c) 2019 by uis
+ * Author: uis
+ * Github: https://github.com/luiing
+ */
+
+package com.uis.adsorbent
 
 import android.content.Context
 import android.os.SystemClock
@@ -7,7 +13,7 @@ import android.support.v7.widget.RecyclerView
 import android.util.AttributeSet
 import android.view.MotionEvent
 
-class ParentRecyclerView :RecyclerView,OnInterceptListener{
+class ParentRecyclerView :RecyclerView, OnInterceptListener {
 
     constructor(context: Context) : super(context)
     constructor(context: Context, attrs: AttributeSet?) : super(context, attrs)
@@ -33,11 +39,10 @@ class ParentRecyclerView :RecyclerView,OnInterceptListener{
     }
 
     override fun dispatchTouchEvent(ev: MotionEvent): Boolean {
-        return dispatchConflictTouchEvent(ev) || super.dispatchTouchEvent(ev)
+        return (enableConflict && dispatchConflictTouchEvent(ev)) || super.dispatchTouchEvent(ev)
     }
 
     private fun dispatchConflictTouchEvent(ev: MotionEvent):Boolean{
-        if(!enableConflict) return false
         when(ev.action){
             MotionEvent.ACTION_DOWN ->{
                 startdx = ev.x
