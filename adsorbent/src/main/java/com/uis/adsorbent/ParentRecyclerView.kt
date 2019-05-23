@@ -11,10 +11,10 @@ import android.os.SystemClock
 import android.support.v7.widget.LinearLayoutManager
 import android.support.v7.widget.RecyclerView
 import android.util.AttributeSet
+import android.util.Log
 import android.view.MotionEvent
 
 class ParentRecyclerView :RecyclerView, OnInterceptListener {
-
     constructor(context: Context) : super(context)
     constructor(context: Context, attrs: AttributeSet?) : super(context, attrs)
     constructor(context: Context, attrs: AttributeSet?, defStyle: Int) : super(context, attrs, defStyle)
@@ -22,20 +22,63 @@ class ParentRecyclerView :RecyclerView, OnInterceptListener {
     private var isChildTop = true
     private var startdy = 0f
     private var startdx = 0f
+    private var lastdy = 0f
+    private var enddy = 0f
+    private var lastTouchTime = 0L
     private var needDispatchChild = true
     private var needDispatchSelf = true
+    private var scrollValue = ArrayList<Float>(12)
 
     /** 是否从吸顶后开始滑动*/
     private var isStartSelfBottom = false
-
-    private var lastdy = 0f
+    /** 抬手动作记录滚动状态*/
+    private var actionUpState = SCROLL_STATE_IDLE
 
     /** true 开启滑动冲突处理*/
     var enableConflict = true
+    /** 开启快速滚动child带动parent联动效果*/
+    var enableScrollChain = true
+
+    init {
+        /** parent带动child联动，此处违背吸顶原则*/
+//        addOnScrollListener(object :OnScrollListener(){
+//            override fun onScrollStateChanged(recyclerView: RecyclerView, newState: Int) {
+//                Log.e("xx","parent statechanged $newState, isBottom="+!canScrollVertically(1))
+//                /** 滚动停止且到了底部,快速滑动事件下发给childview*/
+//                if(enableScrollChain && SCROLL_STATE_IDLE == newState && !canScrollVertically(1)
+//                    && SCROLL_STATE_DRAGGING == actionUpState && scrollValue.size > 2){
+//                    val manager = layoutManager
+//                    if(manager is LinearLayoutManager){
+//                        var realValue = 0f
+//                        for(v in scrollValue){
+//                            realValue += v
+//                            dispatchChildTouch(manager,obtainMoveEvent(startdx,realValue))
+//                        }
+//                        dispatchChildTouch(manager,obtainUpEvent(startdx,realValue))
+//                    }
+//                    scrollValue.clear()
+//                }
+//            }
+//        })
+    }
 
     override fun onTopChild(isTop: Boolean) {
         isChildTop = isTop
         //Log.e("xx","onTopChild $isTop")
+    }
+
+    override fun onScrollChain() {
+        actionUpState = 0
+        if(enableScrollChain && !canScrollVertically(1) && scrollValue.size > 2) {
+            //Log.e("xx", "parent onScrollChain...")
+            var realValue = 0f
+            for (v in scrollValue) {
+                realValue += v
+                dispatchSelfTouch(obtainMoveEvent(startdx, realValue))
+            }
+            dispatchSelfTouch(obtainUpEvent(startdx, realValue))
+            scrollValue.clear()
+        }
     }
 
     override fun dispatchTouchEvent(ev: MotionEvent): Boolean {
@@ -43,29 +86,40 @@ class ParentRecyclerView :RecyclerView, OnInterceptListener {
     }
 
     private fun dispatchConflictTouchEvent(ev: MotionEvent):Boolean{
+        val now = SystemClock.currentThreadTimeMillis()
         when(ev.action){
             MotionEvent.ACTION_DOWN ->{
                 startdx = ev.x
                 startdy = ev.y
-                lastdy = ev.y
                 stopScroll()
                 needDispatchChild = true
                 needDispatchSelf = true
                 isStartSelfBottom = !canScrollVertically(1)
+                scrollValue.clear()
+                scrollValue.add(startdy)
             }
             MotionEvent.ACTION_MOVE ->{
+                scrollValue.add( (ev.y-lastdy)/(now-lastTouchTime))
                 if(conflictMoveEvent(ev)){
+                    lastdy = ev.y
+                    lastTouchTime = now
                     return true
                 }
             }
+            MotionEvent.ACTION_UP ->{
+                actionUpState = scrollState
+                enddy = (ev.y-lastdy)/(now-lastTouchTime)
+            }
         }
+        lastdy = ev.y
+        lastTouchTime = now
+        //Log.e("xx","parent action= ${ev.action} ,state= $scrollState ,y= ${ev.y}, isBotton="+!canScrollVertically(1))
         return false
     }
 
     private fun conflictMoveEvent(ev: MotionEvent):Boolean{
         /** 纵向滑动处理，横向滑动过滤*/
         if(Math.abs(ev.y-startdy) > Math.abs(ev.x-startdx)){
-            lastdy = ev.y
             val manager = layoutManager
             if(manager is LinearLayoutManager){
                 /** true 在底部*/
@@ -79,12 +133,12 @@ class ParentRecyclerView :RecyclerView, OnInterceptListener {
                         if(isStartSelfBottom) {
                             requestDisallowInterceptTouchEvent(true)
                         }else {
-                            dispatchChildTouch(manager,ev,directUp)
+                            dispatchChildTouch(manager,ev)
                             return true
                         }
                     }else if(!isChildTop && directUp){
                         if(!isStartSelfBottom) {
-                            dispatchChildTouch(manager,ev,directUp)
+                            dispatchChildTouch(manager,ev)
                             return true
                         }else{
                             requestDisallowInterceptTouchEvent(true)
@@ -94,9 +148,8 @@ class ParentRecyclerView :RecyclerView, OnInterceptListener {
                         if(isStartSelfBottom){
                             requestDisallowInterceptTouchEvent(false)
                         }else{
-                            dispatchSelfTouch(ev,directUp)
+                            dispatchSelfTouch(ev)
                         }
-
                     }else{
                         /** 事件交给child view*/
                         requestDisallowInterceptTouchEvent(true)
@@ -107,43 +160,45 @@ class ParentRecyclerView :RecyclerView, OnInterceptListener {
         return false
     }
 
-    private fun dispatchSelfTouch(ev: MotionEvent,directUp :Boolean){
+    private fun dispatchSelfTouch(ev: MotionEvent){
         if(needDispatchSelf) {
             needDispatchSelf = false
-            val v = if(directUp) -20 else 20
-            onTouchEvent(obtainDownEvent(ev.x, lastdy))
-            onTouchEvent(obtainMoveEvent(ev.x, lastdy + v))
+            onTouchEvent(obtainDownEvent(ev.x, ev.y))
         }
         onTouchEvent(ev)
     }
 
     /** 给child view分发*/
-    private fun dispatchChildTouch(manager:LinearLayoutManager,ev: MotionEvent,directUp :Boolean){
+    private fun dispatchChildTouch(manager:LinearLayoutManager,ev: MotionEvent){
         val first = manager.findFirstVisibleItemPosition()
         val total = manager.itemCount - 1
         manager.getChildAt(total - first)?.let {
             if (needDispatchChild) {
                 needDispatchChild = false
-                val v = if(directUp) -20 else 20
-                it.dispatchTouchEvent(obtainDownEvent(ev.x, lastdy))
-                it.dispatchTouchEvent(obtainMoveEvent(ev.x, lastdy + v))
+                it.dispatchTouchEvent(obtainDownEvent(ev.x, ev.y))
             }
             it.dispatchTouchEvent(ev)
         }
     }
 
     private fun obtainDownEvent(dx :Float, dy :Float) :MotionEvent{
-        val now = SystemClock.uptimeMillis() - 10
-        return MotionEvent.obtain(now,now,MotionEvent.ACTION_DOWN,dx,dy,0)
+        return obtainActionEvent(MotionEvent.ACTION_DOWN,dx,dy)
     }
 
     private fun obtainMoveEvent(dx :Float, dy :Float) :MotionEvent{
-        val now = SystemClock.uptimeMillis() - 10
-        return MotionEvent.obtain(now,now,MotionEvent.ACTION_MOVE,dx,dy,0)
+        return obtainActionEvent(MotionEvent.ACTION_MOVE,dx,dy)
     }
 
     private fun obtainCancelEvent(dx :Float, dy :Float) :MotionEvent{
+        return obtainActionEvent(MotionEvent.ACTION_CANCEL,dx,dy)
+    }
+
+    private fun obtainUpEvent(dx :Float, dy :Float,mills :Long=0) :MotionEvent{
+        return obtainActionEvent(MotionEvent.ACTION_UP,dx,dy)
+    }
+
+    private fun obtainActionEvent(action :Int,dx :Float, dy :Float) :MotionEvent{
         val now = SystemClock.uptimeMillis()
-        return MotionEvent.obtain(now,now,MotionEvent.ACTION_CANCEL,dx,dy,0)
+        return MotionEvent.obtain(now,now,action,dx,dy,0)
     }
 }

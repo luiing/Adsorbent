@@ -6,6 +6,7 @@
 
 package com.uis.adsorbent
 
-interface OnInterceptListener {
+internal interface OnInterceptListener {
     fun onTopChild(isTop :Boolean)
+    fun onScrollChain()
 }
