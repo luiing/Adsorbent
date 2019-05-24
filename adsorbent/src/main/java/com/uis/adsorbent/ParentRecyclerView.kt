@@ -13,6 +13,7 @@ import android.support.v7.widget.RecyclerView
 import android.util.AttributeSet
 import android.util.Log
 import android.view.MotionEvent
+import android.view.VelocityTracker
 
 class ParentRecyclerView :RecyclerView, OnInterceptListener {
     constructor(context: Context) : super(context)
@@ -22,62 +23,55 @@ class ParentRecyclerView :RecyclerView, OnInterceptListener {
     private var isChildTop = true
     private var startdy = 0f
     private var startdx = 0f
-    private var lastdy = 0f
-    private var enddy = 0f
-    private var lastTouchTime = 0L
     private var needDispatchChild = true
     private var needDispatchSelf = true
-    private var scrollValue = ArrayList<Float>(12)
-
     /** 是否从吸顶后开始滑动*/
     private var isStartSelfBottom = false
-    /** 抬手动作记录滚动状态*/
-    private var actionUpState = SCROLL_STATE_IDLE
+    private var velocity :VelocityTracker? = null
+    private var verticalSpeed = 0f
 
     /** true 开启滑动冲突处理*/
     var enableConflict = true
+    /** 开启快速滚动parent带动child联动效果(默认false)*/
+    var enableParentChain = false
     /** 开启快速滚动child带动parent联动效果*/
-    var enableScrollChain = true
+    var enableChildChain = true
 
     init {
         /** parent带动child联动，此处违背吸顶原则*/
-//        addOnScrollListener(object :OnScrollListener(){
-//            override fun onScrollStateChanged(recyclerView: RecyclerView, newState: Int) {
-//                Log.e("xx","parent statechanged $newState, isBottom="+!canScrollVertically(1))
-//                /** 滚动停止且到了底部,快速滑动事件下发给childview*/
-//                if(enableScrollChain && SCROLL_STATE_IDLE == newState && !canScrollVertically(1)
-//                    && SCROLL_STATE_DRAGGING == actionUpState && scrollValue.size > 2){
-//                    val manager = layoutManager
-//                    if(manager is LinearLayoutManager){
-//                        var realValue = 0f
-//                        for(v in scrollValue){
-//                            realValue += v
-//                            dispatchChildTouch(manager,obtainMoveEvent(startdx,realValue))
-//                        }
-//                        dispatchChildTouch(manager,obtainUpEvent(startdx,realValue))
-//                    }
-//                    scrollValue.clear()
-//                }
-//            }
-//        })
+        addOnScrollListener(object :OnScrollListener(){
+            override fun onScrollStateChanged(recyclerView: RecyclerView, newState: Int) {
+                /** 滚动停止且到了底部,快速滑动事件下发给childview*/
+                if(enableParentChain && SCROLL_STATE_IDLE == newState && !canScrollVertically(1)
+                    && Math.abs(verticalSpeed) >= maxFlingVelocity/2){
+                    val manager = layoutManager
+                    if(manager is LinearLayoutManager){
+                        val speed = Math.signum(verticalSpeed)*200
+                        var dy = 2000f
+                        for(i in 0 until 4){
+                            dispatchChildTouch(manager,obtainMoveEvent(startdx,dy))
+                            dy += speed
+                        }
+                        dispatchChildTouch(manager,obtainUpEvent(startdx,dy))
+                    }
+                }
+            }
+        })
     }
 
     override fun onTopChild(isTop: Boolean) {
         isChildTop = isTop
-        //Log.e("xx","onTopChild $isTop")
     }
 
     override fun onScrollChain() {
-        actionUpState = 0
-        if(enableScrollChain && !canScrollVertically(1) && scrollValue.size > 2) {
-            //Log.e("xx", "parent onScrollChain...")
-            var realValue = 0f
-            for (v in scrollValue) {
-                realValue += v
-                dispatchSelfTouch(obtainMoveEvent(startdx, realValue))
+        if(enableChildChain && isStartSelfBottom && Math.abs(verticalSpeed) >= maxFlingVelocity) {
+            val speed = Math.signum(verticalSpeed)*200
+            var dy = 1000f
+            for(i in 0 until 4){
+                dispatchSelfTouch(obtainMoveEvent(startdx, dy))
+                dy += speed
             }
-            dispatchSelfTouch(obtainUpEvent(startdx, realValue))
-            scrollValue.clear()
+            dispatchSelfTouch(obtainUpEvent(startdx, dy))
         }
     }
 
@@ -86,7 +80,10 @@ class ParentRecyclerView :RecyclerView, OnInterceptListener {
     }
 
     private fun dispatchConflictTouchEvent(ev: MotionEvent):Boolean{
-        val now = SystemClock.currentThreadTimeMillis()
+        if(velocity == null){
+            velocity = VelocityTracker.obtain()
+        }
+        velocity?.addMovement(ev)
         when(ev.action){
             MotionEvent.ACTION_DOWN ->{
                 startdx = ev.x
@@ -95,24 +92,22 @@ class ParentRecyclerView :RecyclerView, OnInterceptListener {
                 needDispatchChild = true
                 needDispatchSelf = true
                 isStartSelfBottom = !canScrollVertically(1)
-                scrollValue.clear()
-                scrollValue.add(startdy)
+                verticalSpeed = 0f
             }
             MotionEvent.ACTION_MOVE ->{
-                scrollValue.add( (ev.y-lastdy)/(now-lastTouchTime))
                 if(conflictMoveEvent(ev)){
-                    lastdy = ev.y
-                    lastTouchTime = now
                     return true
                 }
             }
             MotionEvent.ACTION_UP ->{
-                actionUpState = scrollState
-                enddy = (ev.y-lastdy)/(now-lastTouchTime)
+                velocity?.let {
+                    it.computeCurrentVelocity(1000, maxFlingVelocity.toFloat())
+                    verticalSpeed = it.getYVelocity()
+                }
+                velocity?.recycle()
+                velocity = null
             }
         }
-        lastdy = ev.y
-        lastTouchTime = now
         //Log.e("xx","parent action= ${ev.action} ,state= $scrollState ,y= ${ev.y}, isBotton="+!canScrollVertically(1))
         return false
     }
@@ -164,6 +159,7 @@ class ParentRecyclerView :RecyclerView, OnInterceptListener {
         if(needDispatchSelf) {
             needDispatchSelf = false
             onTouchEvent(obtainDownEvent(ev.x, ev.y))
+            SystemClock.sleep(2)
         }
         onTouchEvent(ev)
     }
@@ -176,6 +172,7 @@ class ParentRecyclerView :RecyclerView, OnInterceptListener {
             if (needDispatchChild) {
                 needDispatchChild = false
                 it.dispatchTouchEvent(obtainDownEvent(ev.x, ev.y))
+                SystemClock.sleep(2)
             }
             it.dispatchTouchEvent(ev)
         }
