@@ -50,6 +50,8 @@ class DoubleRecyclerUi: AppCompatActivity() {
         recyclerView.layoutManager = manager
         recyclerView.adapter = adapter
 
+        recyclerView.enableParentChain = true
+
     }
 
 
