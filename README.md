@@ -10,10 +10,8 @@
     3. Viewpager RecyclerView:RecyclerView嵌套ViewPager(其中包含的页面内容是RecyclerView)
     【事件分发，吸顶View是个单独ViewHolder,无须做其他处理】
     
-    4. 项目无偿使用，请注明出处和作者信息
-    
 ### USE by Kotlin
-    implementation 'com.uis:adsorbent:0.1.3
+    implementation 'com.uis:adsorbent:0.2.0
     implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlin_version"
     implementation "com.android.support:recyclerview-v7:$supportVer"
     
@@ -25,8 +23,9 @@
 Version|Descipt|Fixed|Time
 ----|----|----|----
 0.1.1|初始版本| |2019/05/23
-0.1.2|新增|快速滑动联动效果| |2019/05/24
-0.1.3|更改|快速滑动联动处理| |2019/05/25
+0.1.2|新增|快速滑动联动效果|2019/05
+0.1.3|更改|快速滑动联动处理|2019/05
+0.2.0|优化|联动平滑过渡,冲突后重新分发|2019/05
 
 ### USE
 ##### 事件分发ParentRecyclerView设置
