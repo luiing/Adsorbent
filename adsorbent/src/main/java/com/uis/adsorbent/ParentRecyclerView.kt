@@ -13,6 +13,7 @@ import android.support.v7.widget.RecyclerView
 import android.util.AttributeSet
 import android.util.Log
 import android.view.MotionEvent
+import android.view.VelocityTracker
 
 class ParentRecyclerView :RecyclerView, OnInterceptListener {
     constructor(context: Context) : super(context)
@@ -22,9 +23,11 @@ class ParentRecyclerView :RecyclerView, OnInterceptListener {
     private var isChildTop = true
     private var startdy = 0f
     private var startdx = 0f
-    private var enddy = 0f
     private var needDispatchChild = true
     private var needDispatchSelf = true
+    private var velocity : VelocityTracker? = null
+    private var velocityY = 0
+    private var isMoveY = false
 
     /** true 开启滑动冲突处理*/
     var enableConflict = true
@@ -44,7 +47,7 @@ class ParentRecyclerView :RecyclerView, OnInterceptListener {
                         val total = manager.itemCount - 1
                         manager.getChildAt(total - first)?.let {
                             if(it is RecyclerView){
-                                it.smoothScrollBy(0,(startdy-enddy).toInt())
+                                it.fling(0,velocityY/2)
                             }
                         }
                     }
@@ -60,7 +63,7 @@ class ParentRecyclerView :RecyclerView, OnInterceptListener {
     override fun onScrollChain() {
         /** child带动parent联动效果,快速滑动事件下发给self view*/
         if(enableChildChain && isChildTop ) {
-            smoothScrollBy(0,(startdy-enddy).toInt())
+            fling(0,velocityY/2)
         }
     }
 
@@ -71,18 +74,27 @@ class ParentRecyclerView :RecyclerView, OnInterceptListener {
     }
 
     private fun dispatchConflictTouchEvent(ev: MotionEvent):Boolean{
+        velocity?:{
+            velocity = VelocityTracker.obtain()
+        }.invoke()
+        velocity?.addMovement(ev)
         when(ev.action){
             MotionEvent.ACTION_DOWN ->{
                 startdx = ev.x
                 startdy = ev.y
-                enddy = ev.y
-                stopScroll()
+                velocityY = 0
+                isMoveY = false
             }
             MotionEvent.ACTION_MOVE ->{
                 conflictTouchEvent(ev)
             }
             MotionEvent.ACTION_UP ->{
-                enddy = ev.y
+                velocity?.let {
+                    it.computeCurrentVelocity(1000, maxFlingVelocity.toFloat())
+                    velocityY = -it.yVelocity.toInt()
+                    velocity?.recycle()
+                }
+                velocity = null
             }
         }
         return false
@@ -91,7 +103,8 @@ class ParentRecyclerView :RecyclerView, OnInterceptListener {
 
     private fun conflictTouchEvent(ev: MotionEvent){
         /** 纵向滑动处理，横向滑动过滤*/
-        if(Math.abs(ev.y-startdy) > Math.abs(ev.x-startdx)){
+        if(isMoveY || Math.abs(ev.y-startdy) > Math.abs(ev.x-startdx)){
+            isMoveY = true
             /** true 在底部*/
             val isBottom = !canScrollVertically(1)
             /** true向上滑动*/
@@ -132,24 +145,24 @@ class ParentRecyclerView :RecyclerView, OnInterceptListener {
         needDispatchSelf = true
     }
 
-    private fun obtainDownEvent(dx :Float, dy :Float,downTime :Long=0) :MotionEvent{
-        return obtainActionEvent(MotionEvent.ACTION_DOWN,dx,dy,downTime)
+    private fun obtainDownEvent(dx :Float, dy :Float) :MotionEvent{
+        return obtainActionEvent(MotionEvent.ACTION_DOWN,dx,dy)
     }
 
-    private fun obtainMoveEvent(dx :Float, dy :Float,downTime :Long=0) :MotionEvent{
-        return obtainActionEvent(MotionEvent.ACTION_MOVE,dx,dy,downTime)
+    private fun obtainMoveEvent(dx :Float, dy :Float) :MotionEvent{
+        return obtainActionEvent(MotionEvent.ACTION_MOVE,dx,dy)
     }
 
-    private fun obtainUpEvent(dx :Float, dy :Float,downTime :Long=0) :MotionEvent{
-        return obtainActionEvent(MotionEvent.ACTION_UP,dx,dy,downTime)
+    private fun obtainUpEvent(dx :Float, dy :Float) :MotionEvent{
+        return obtainActionEvent(MotionEvent.ACTION_UP,dx,dy)
     }
 
-    private fun obtainCancelEvent(dx :Float, dy :Float,downTime :Long=0) :MotionEvent{
-        return obtainActionEvent(MotionEvent.ACTION_CANCEL,dx,dy,downTime)
+    private fun obtainCancelEvent(dx :Float, dy :Float) :MotionEvent{
+        return obtainActionEvent(MotionEvent.ACTION_CANCEL,dx,dy)
     }
 
-    private fun obtainActionEvent(action :Int,dx :Float, dy :Float,downTime :Long=0) :MotionEvent{
+    private fun obtainActionEvent(action :Int,dx :Float, dy :Float) :MotionEvent{
         val now = SystemClock.uptimeMillis()
-        return MotionEvent.obtain(if(downTime<=0)now else downTime,now,action,dx,dy,0)
+        return MotionEvent.obtain(now,now,action,dx,dy,0)
     }
 }
