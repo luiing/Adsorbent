@@ -27,11 +27,10 @@ class ChildRecyclerView :RecyclerView{
         addOnScrollListener(object :OnScrollListener(){
             override fun onScrollStateChanged(recyclerView: RecyclerView, newState: Int) {
                 /** 滚动停止且到了顶部,快速滑动事件往上给parent view*/
-                if(enableConflict) {
-                    val isTop = !canScrollVertically(-1)
-                    parentView?.get()?.onTopChild(isTop)
-                    if (SCROLL_STATE_IDLE == newState) {
-                        parentView?.get()?.onScrollChain()
+                if(enableConflict && SCROLL_STATE_IDLE == newState) {
+                    parentView?.get()?.let{
+                        it.onTopChild(!canScrollVertically(-1))
+                        it.onScrollChain()
                     }
                 }
             }
@@ -51,7 +50,6 @@ class ChildRecyclerView :RecyclerView{
             var pv = parent
             while (pv != null) {
                 if (pv is OnInterceptListener) {
-
                     parentView = WeakReference(pv)
                     break
                 }

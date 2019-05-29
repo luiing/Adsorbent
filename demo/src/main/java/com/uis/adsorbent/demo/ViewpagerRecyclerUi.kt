@@ -50,6 +50,7 @@ class ViewpagerRecyclerUi: AppCompatActivity() {
         manager = LinearLayoutManager(this)
         recyclerView.layoutManager = manager
         recyclerView.adapter = adapter
+        recyclerView.enableParentChain = true
     }
 
 
