@@ -28,6 +28,7 @@ Version|Descipt|Fixed|Time
 0.2.0|优化|联动平滑过渡,冲突后重新分发|2019/05
 0.2.1|优化|联动支持fling|2019/05
 0.3.0|优化|冲突事件分发优化,更简单易懂|2019/06
+0.3.20|fixed|The specified child already has a parent. You must call removeView() on the child's parent first|2019/10
 
 ### USE
 ##### 事件分发ParentRecyclerView设置

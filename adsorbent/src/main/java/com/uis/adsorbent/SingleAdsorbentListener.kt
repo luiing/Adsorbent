@@ -20,9 +20,9 @@ abstract class SingleAdsorbentListener : RecyclerView.OnScrollListener(){
     /** 获取吸顶View在RecyclerView中的位置*/
     abstract fun getPinViewPosition():Int
     /** 吸顶的时候 停止滚动并定位在吸顶位置*/
-    fun stopWhenAdsorbent():Boolean = true
+    open fun stopWhenAdsorbent():Boolean = true
 
-    fun getPinViewLayoutParam():ViewGroup.LayoutParams =
+    open fun getPinViewLayoutParam():ViewGroup.LayoutParams =
         ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT,ViewGroup.LayoutParams.WRAP_CONTENT)
 
     override fun onScrolled(recyclerView: RecyclerView, dx: Int, dy: Int) {
@@ -56,7 +56,9 @@ abstract class SingleAdsorbentListener : RecyclerView.OnScrollListener(){
             if(p is ViewGroup){
                 p.removeView(pinView)
             }
-            uiView.addView(pinView, getPinViewLayoutParam())
+            runCatching {
+                uiView.addView(pinView, getPinViewLayoutParam())
+            }.exceptionOrNull()?.printStackTrace()
         }
     }
 
@@ -69,7 +71,9 @@ abstract class SingleAdsorbentListener : RecyclerView.OnScrollListener(){
             uiView.removeView(pinView)
         }
         if(holderView is ViewGroup && holderView.indexOfChild(pinView) < 0) {
-            holderView.addView(pinView, getPinViewLayoutParam())
+            runCatching{
+                holderView.addView(pinView, getPinViewLayoutParam())
+            }.exceptionOrNull()?.printStackTrace()
         }
     }
 }
