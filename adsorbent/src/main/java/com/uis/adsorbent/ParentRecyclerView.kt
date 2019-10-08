@@ -13,6 +13,9 @@ import android.support.v7.widget.RecyclerView
 import android.util.AttributeSet
 import android.util.Log
 import android.view.MotionEvent
+import android.view.VelocityTracker
+import android.view.View
+import android.view.ViewGroup
 
 class ParentRecyclerView :RecyclerView, OnInterceptListener {
     constructor(context: Context) : super(context)
@@ -22,162 +25,151 @@ class ParentRecyclerView :RecyclerView, OnInterceptListener {
     private var isChildTop = true
     private var startdy = 0f
     private var startdx = 0f
-    private var lastdy = 0f
-    private var enddy = 0f
-    private var lastTouchTime = 0L
-    private var needDispatchChild = true
-    private var needDispatchSelf = true
-    private var scrollValue = ArrayList<Float>(12)
-
-    /** 是否从吸顶后开始滑动*/
-    private var isStartSelfBottom = false
-    /** 抬手动作记录滚动状态*/
-    private var actionUpState = SCROLL_STATE_IDLE
+    private var velocity : VelocityTracker? = null
+    private var velocityY = 0
+    private var isMoveY = false
+    private var isSelfTouch = true
 
     /** true 开启滑动冲突处理*/
     var enableConflict = true
+    /** 开启快速滚动parent带动child联动效果(默认false)*/
+    var enableParentChain = false
     /** 开启快速滚动child带动parent联动效果*/
-    var enableScrollChain = true
+    var enableChildChain = true
 
     init {
-        /** parent带动child联动，此处违背吸顶原则*/
-//        addOnScrollListener(object :OnScrollListener(){
-//            override fun onScrollStateChanged(recyclerView: RecyclerView, newState: Int) {
-//                Log.e("xx","parent statechanged $newState, isBottom="+!canScrollVertically(1))
-//                /** 滚动停止且到了底部,快速滑动事件下发给childview*/
-//                if(enableScrollChain && SCROLL_STATE_IDLE == newState && !canScrollVertically(1)
-//                    && SCROLL_STATE_DRAGGING == actionUpState && scrollValue.size > 2){
-//                    val manager = layoutManager
-//                    if(manager is LinearLayoutManager){
-//                        var realValue = 0f
-//                        for(v in scrollValue){
-//                            realValue += v
-//                            dispatchChildTouch(manager,obtainMoveEvent(startdx,realValue))
-//                        }
-//                        dispatchChildTouch(manager,obtainUpEvent(startdx,realValue))
-//                    }
-//                    scrollValue.clear()
-//                }
-//            }
-//        })
+        addOnScrollListener(object :OnScrollListener(){
+            override fun onScrollStateChanged(recyclerView: RecyclerView, newState: Int) {
+                /** 滚动停止且到了底部,快速滑动事件下发给child view*/
+                if(enableParentChain && SCROLL_STATE_IDLE == newState && !canScrollVertically(1) && velocityY != 0){
+                    val manager = layoutManager
+                    if(manager is LinearLayoutManager){
+                        val first = manager.findFirstVisibleItemPosition()
+                        val total = manager.itemCount - 1
+                        manager.getChildAt(total - first)?.let {
+                            searchViewGroup(recyclerView,it)
+                        }
+                    }
+                }
+            }
+
+            /** 采用递归算法遍历*/
+            fun searchViewGroup(parent :ViewGroup,child : View):Boolean{
+                if(flingChild(parent,child)){
+                    return true
+                }
+                if(child is ViewGroup) {
+                    for (i in 0 until child.childCount) {
+                        val subChild = child.getChildAt(i)
+                        if(subChild is ViewGroup && searchViewGroup(parent,subChild)){
+                            return true
+                        }
+                    }
+                }
+                return false
+            }
+
+            /** 确保child的屏幕坐标在parent内，主要适配ViewPager*/
+            fun flingChild(parent :ViewGroup,child : View):Boolean{
+                val locChild = IntArray(2)
+                val locParent = IntArray(2)
+                parent.getLocationOnScreen(locParent)
+                child.getLocationOnScreen(locChild)
+                val childX = locChild[0]
+                val parentX = locParent[0]
+                if (childX >= parentX && childX< (parentX+parent.measuredWidth) && child is RecyclerView) {
+                    child.fling(0, velocityY/2)
+                    return true
+                }
+                return false
+            }
+        })
     }
 
     override fun onTopChild(isTop: Boolean) {
         isChildTop = isTop
-        //Log.e("xx","onTopChild $isTop")
     }
 
     override fun onScrollChain() {
-        actionUpState = 0
-        if(enableScrollChain && !canScrollVertically(1) && scrollValue.size > 2) {
-            //Log.e("xx", "parent onScrollChain...")
-            var realValue = 0f
-            for (v in scrollValue) {
-                realValue += v
-                dispatchSelfTouch(obtainMoveEvent(startdx, realValue))
-            }
-            dispatchSelfTouch(obtainUpEvent(startdx, realValue))
-            scrollValue.clear()
+        /** child带动parent联动效果,快速滑动事件下发给self view*/
+        if(enableChildChain && isChildTop ) {
+            fling(0,velocityY/2)
         }
     }
 
     override fun dispatchTouchEvent(ev: MotionEvent): Boolean {
-        return (enableConflict && dispatchConflictTouchEvent(ev)) || super.dispatchTouchEvent(ev)
+        if(enableConflict){
+            dispatchConflictTouchEvent(ev)
+        }
+        return  super.dispatchTouchEvent(ev)
     }
 
-    private fun dispatchConflictTouchEvent(ev: MotionEvent):Boolean{
-        val now = SystemClock.currentThreadTimeMillis()
+    private fun dispatchConflictTouchEvent(ev: MotionEvent){
+        //Log.e("xx","dispatchConfict action=${ev.action},dy=${ev.y}")
+        velocity?:{
+            velocity = VelocityTracker.obtain()
+        }.invoke()
+        velocity?.addMovement(ev)
         when(ev.action){
             MotionEvent.ACTION_DOWN ->{
                 startdx = ev.x
                 startdy = ev.y
-                stopScroll()
-                needDispatchChild = true
-                needDispatchSelf = true
-                isStartSelfBottom = !canScrollVertically(1)
-                scrollValue.clear()
-                scrollValue.add(startdy)
+                velocityY = 0
+                isMoveY = false
             }
             MotionEvent.ACTION_MOVE ->{
-                scrollValue.add( (ev.y-lastdy)/(now-lastTouchTime))
-                if(conflictMoveEvent(ev)){
-                    lastdy = ev.y
-                    lastTouchTime = now
-                    return true
-                }
+                conflictTouchEvent(ev)
             }
             MotionEvent.ACTION_UP ->{
-                actionUpState = scrollState
-                enddy = (ev.y-lastdy)/(now-lastTouchTime)
-            }
-        }
-        lastdy = ev.y
-        lastTouchTime = now
-        //Log.e("xx","parent action= ${ev.action} ,state= $scrollState ,y= ${ev.y}, isBotton="+!canScrollVertically(1))
-        return false
-    }
-
-    private fun conflictMoveEvent(ev: MotionEvent):Boolean{
-        /** 纵向滑动处理，横向滑动过滤*/
-        if(Math.abs(ev.y-startdy) > Math.abs(ev.x-startdx)){
-            val manager = layoutManager
-            if(manager is LinearLayoutManager){
-                /** true 在底部*/
-                val isBottom = !canScrollVertically(1)
-                /** true向上滑动*/
-                val directUp = (ev.y - startdy) < 0
-                //Log.e("xx","isBottom= $isBottom, directUp= $directUp, isTopChild= $isChildTop, isStartSelfBottom=$isStartSelfBottom, dy=${ev.y}")
-                if(isBottom){
-                    if(isChildTop && directUp){
-                        /** 事件交分发给 child view*/
-                        if(isStartSelfBottom) {
-                            requestDisallowInterceptTouchEvent(true)
-                        }else {
-                            dispatchChildTouch(manager,ev)
-                            return true
-                        }
-                    }else if(!isChildTop && directUp){
-                        if(!isStartSelfBottom) {
-                            dispatchChildTouch(manager,ev)
-                            return true
-                        }else{
-                            requestDisallowInterceptTouchEvent(true)
-                        }
-                    }else if(isChildTop && !directUp){
-                        /** 事件交给self view*/
-                        if(isStartSelfBottom){
-                            requestDisallowInterceptTouchEvent(false)
-                        }else{
-                            dispatchSelfTouch(ev)
-                        }
-                    }else{
-                        /** 事件交给child view*/
-                        requestDisallowInterceptTouchEvent(true)
-                    }
+                isSelfTouch = true
+                velocity?.let {
+                    it.computeCurrentVelocity(1000, maxFlingVelocity.toFloat())
+                    velocityY = -it.yVelocity.toInt()
+                    velocity?.recycle()
                 }
+                velocity = null
             }
         }
-        return false
     }
 
-    private fun dispatchSelfTouch(ev: MotionEvent){
-        if(needDispatchSelf) {
-            needDispatchSelf = false
-            onTouchEvent(obtainDownEvent(ev.x, ev.y))
+
+    private fun conflictTouchEvent(ev: MotionEvent){
+        /** 纵向滑动处理，横向滑动过滤*/
+        if(isMoveY || Math.abs(ev.y-startdy) > Math.abs(ev.x-startdx)){
+            isMoveY = true
+            /** true 在底部*/
+            val isBottom = !canScrollVertically(1)
+            /** true向上滑动*/
+            val directUp = (ev.y - startdy) < 0
+            //Log.e("xx","isBootom=$isBottom,directUp=$directUp,ischildTop=$isChildTop,y=${ev.y}")
+            if(isBottom){
+                if(isChildTop && !directUp){
+                    dispatchSelfTouch(ev)
+                }else{
+                    dispatchChildTouch(ev)
+                }
+            }else{
+                dispatchSelfTouch(ev)
+            }
         }
-        onTouchEvent(ev)
+    }
+
+    /** 给selft view分发*/
+    private fun dispatchSelfTouch(ev: MotionEvent){
+        if(!isSelfTouch){
+            isSelfTouch = true
+            dispatchTouchEvent(obtainCancelEvent(ev.x, ev.y))
+            dispatchTouchEvent(obtainDownEvent(ev.x, ev.y))
+        }
     }
 
     /** 给child view分发*/
-    private fun dispatchChildTouch(manager:LinearLayoutManager,ev: MotionEvent){
-        val first = manager.findFirstVisibleItemPosition()
-        val total = manager.itemCount - 1
-        manager.getChildAt(total - first)?.let {
-            if (needDispatchChild) {
-                needDispatchChild = false
-                it.dispatchTouchEvent(obtainDownEvent(ev.x, ev.y))
-            }
-            it.dispatchTouchEvent(ev)
+    private fun dispatchChildTouch(ev: MotionEvent){
+        if (isSelfTouch){
+            isSelfTouch = false
+            dispatchTouchEvent(obtainCancelEvent(ev.x,ev.y))
+            dispatchTouchEvent(obtainDownEvent(ev.x,ev.y))
+            requestDisallowInterceptTouchEvent(true)
         }
     }
 
@@ -185,16 +177,8 @@ class ParentRecyclerView :RecyclerView, OnInterceptListener {
         return obtainActionEvent(MotionEvent.ACTION_DOWN,dx,dy)
     }
 
-    private fun obtainMoveEvent(dx :Float, dy :Float) :MotionEvent{
-        return obtainActionEvent(MotionEvent.ACTION_MOVE,dx,dy)
-    }
-
     private fun obtainCancelEvent(dx :Float, dy :Float) :MotionEvent{
         return obtainActionEvent(MotionEvent.ACTION_CANCEL,dx,dy)
-    }
-
-    private fun obtainUpEvent(dx :Float, dy :Float,mills :Long=0) :MotionEvent{
-        return obtainActionEvent(MotionEvent.ACTION_UP,dx,dy)
     }
 
     private fun obtainActionEvent(action :Int,dx :Float, dy :Float) :MotionEvent{
