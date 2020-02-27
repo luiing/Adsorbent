@@ -141,7 +141,7 @@ class ParentRecyclerView :RecyclerView, OnInterceptListener {
             val isBottom = !canScrollVertically(1)
             /** true向上滑动*/
             val directUp = (ev.y - startdy) < 0
-            //Log.e("xx","isBootom=$isBottom,directUp=$directUp,ischildTop=$isChildTop,y=${ev.y}")
+            //Log.e("xx","isBootom=$isBottom,directUp=$directUp,ischildTop=$isChildTop,y=${ev.y},isselftouch=$isSelfTouch")
             if(isBottom){
                 if(isChildTop && !directUp){
                     dispatchSelfTouch(ev)
@@ -167,8 +167,16 @@ class ParentRecyclerView :RecyclerView, OnInterceptListener {
     private fun dispatchChildTouch(ev: MotionEvent){
         if (isSelfTouch){
             isSelfTouch = false
+            var childY = 0
+            val manager = layoutManager
+            if(manager is LinearLayoutManager){
+                val first = manager.findFirstVisibleItemPosition()
+                val total = manager.itemCount - 1
+                childY = manager.getChildAt(total - first)?.top ?: 0
+            }
             dispatchTouchEvent(obtainCancelEvent(ev.x,ev.y))
-            dispatchTouchEvent(obtainDownEvent(ev.x,ev.y))
+
+            dispatchTouchEvent(obtainDownEvent(ev.x,Math.max(childY.toFloat(),ev.y)))
             requestDisallowInterceptTouchEvent(true)
         }
     }
