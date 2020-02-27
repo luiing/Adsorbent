@@ -11,7 +11,7 @@
     【事件分发，吸顶View是个单独ViewHolder,无须做其他处理】
     
 ### USE by Kotlin
-    implementation 'com.uis:adsorbent:0.3.2
+    implementation 'com.uis:adsorbent:0.3.3
     implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlin_version"
     implementation "com.android.support:recyclerview-v7:$supportVer"
     
@@ -29,6 +29,7 @@ Version|Descipt|Fixed|Time
 0.2.1|优化|联动支持fling|2019/05
 0.3.0|优化|冲突事件分发优化,更简单易懂|2019/06
 0.3.2|fixed|The specified child already has a parent. You must call removeView() on the child's parent first|2019/10
+0.3.3|fixed|联动子view效果|2020/02
 
 ### USE
 ##### 事件分发ParentRecyclerView设置
@@ -47,6 +48,8 @@ Version|Descipt|Fixed|Time
             override fun getPinView(): View = pin
             /** 获取吸顶View在RecyclerView中的位置*/
             override fun getPinViewPosition(): Int = 15
+            /** 吸顶的时候 true:停止滚动并定位在吸顶位置,false:可以继续fling*/
+            override fun stopWhenAdsorbent(): Boolean = false
         })
 ##### Double
     //recyclerView is ParentRecyclerView
