@@ -13,6 +13,7 @@ import android.util.Log
 import android.util.TypedValue
 import android.view.View
 import android.view.ViewGroup
+import android.widget.Toast
 import com.uis.groupadapter.GroupAdapter
 import com.uis.groupadapter.GroupEntity
 import com.uis.groupadapter.GroupHolder
@@ -21,6 +22,7 @@ import kotlinx.android.synthetic.main.ui_item_recyclerview.view.*
 import kotlinx.android.synthetic.main.ui_item_txt.view.*
 import kotlinx.android.synthetic.main.ui_item_txt_large.view.*
 import kotlinx.android.synthetic.main.ui_item_viewpager.view.*
+import kotlinx.android.synthetic.main.ui_view_pin.view.*
 
 const val VT_TXT        = 0
 const val VT_TXT_LARGE  = 1
@@ -105,6 +107,9 @@ class PinVH(parent: ViewGroup) : GroupHolder<View>(R.layout.ui_item_pin,parent){
     override fun bindVH(item: View) {
         if(itemView is ViewGroup && itemView.childCount <= 0){
             itemView.addView(item,ViewGroup.LayoutParams(-1,-1))
+        }
+        itemView.bt_add.setOnClickListener {
+            Toast.makeText(it.context,"add",Toast.LENGTH_SHORT).show()
         }
     }
 }
