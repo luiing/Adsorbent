@@ -11,7 +11,7 @@
     【事件分发，吸顶View是个单独ViewHolder,无须做其他处理】
     
 ### USE by Kotlin
-    implementation 'com.uis:adsorbent:0.3.3
+    implementation 'com.uis:adsorbent:0.3.4
     implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlin_version"
     implementation "com.android.support:recyclerview-v7:$supportVer"
     
@@ -30,7 +30,8 @@ Version|Descipt|Fixed|Time
 0.3.0|优化|冲突事件分发优化,更简单易懂|2019/06
 0.3.2|fixed|The specified child already has a parent. You must call removeView() on the child's parent first|2019/10
 0.3.3|fixed|联动子view效果|2020/02
-
+0.3.4|fixed|吸顶后子view不在顶部时父类在动|2020/02
+0.3.5|fixed|吸顶后对view滑动事件放行处理|2020/02
 ### USE
 ##### 事件分发ParentRecyclerView设置
     /** true 开启滑动冲突处理(默认true)*/
