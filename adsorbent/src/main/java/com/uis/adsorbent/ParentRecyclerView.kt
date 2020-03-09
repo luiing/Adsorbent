@@ -15,7 +15,6 @@ import android.util.Log
 import android.view.*
 import kotlin.math.abs
 import kotlin.math.max
-import kotlin.properties.Delegates
 
 class ParentRecyclerView :RecyclerView, OnInterceptListener {
     constructor(context: Context) : super(context)
@@ -30,7 +29,7 @@ class ParentRecyclerView :RecyclerView, OnInterceptListener {
     private var velocity : VelocityTracker? = null
     private var velocityY = 0
     private var isSelfTouch = true
-    private var mTouchSlop by Delegates.notNull<Int>()
+    private var mTouchSlop = 0
 
     /** true 开启滑动冲突处理*/
     var enableConflict = true
@@ -147,7 +146,7 @@ class ParentRecyclerView :RecyclerView, OnInterceptListener {
             if(!isSlideDy){
                 val dy = abs(ev.y-startDy)
                 val dx = abs(ev.x-startDx)
-                if(dy>dx && dy>mTouchSlop){
+                if((dy>dx/2 && dx>mTouchSlop)||dy>mTouchSlop){
                     isSlideDy = true
                 }
             }
@@ -186,7 +185,9 @@ class ParentRecyclerView :RecyclerView, OnInterceptListener {
                 val first = manager.findFirstVisibleItemPosition()
                 val total = manager.itemCount - 1
                 manager.getChildAt(total - first)?.let{
-                    dy = max(it.top.toFloat(),dy)
+                    val top = it.top.toFloat()
+                    if(startDy < top)
+                        dy = max(top,dy)
                 }
             }
             dispatchTouchEvent(obtainCancelEvent(ev.x,dy))
