@@ -12,10 +12,10 @@ import android.support.v7.widget.LinearLayoutManager
 import android.support.v7.widget.RecyclerView
 import android.util.AttributeSet
 import android.util.Log
-import android.view.MotionEvent
-import android.view.VelocityTracker
-import android.view.View
-import android.view.ViewGroup
+import android.view.*
+import kotlin.math.abs
+import kotlin.math.max
+import kotlin.properties.Delegates
 
 class ParentRecyclerView :RecyclerView, OnInterceptListener {
     constructor(context: Context) : super(context)
@@ -23,12 +23,14 @@ class ParentRecyclerView :RecyclerView, OnInterceptListener {
     constructor(context: Context, attrs: AttributeSet?, defStyle: Int) : super(context, attrs, defStyle)
 
     private var isChildTop = true
-    private var startdy = 0f
-    private var startdx = 0f
+    private var startDy = 0f
+    private var startDx = 0f
+    private var isSlideDy = false
+    private var childDisallowIntercept = false
     private var velocity : VelocityTracker? = null
     private var velocityY = 0
-    private var isMoveY = false
     private var isSelfTouch = true
+    private var mTouchSlop by Delegates.notNull<Int>()
 
     /** true 开启滑动冲突处理*/
     var enableConflict = true
@@ -38,6 +40,7 @@ class ParentRecyclerView :RecyclerView, OnInterceptListener {
     var enableChildChain = true
 
     init {
+        mTouchSlop = ViewConfiguration.get(context).scaledTouchSlop
         addOnScrollListener(object :OnScrollListener(){
             override fun onScrollStateChanged(recyclerView: RecyclerView, newState: Int) {
                 /** 滚动停止且到了底部,快速滑动事件下发给child view*/
@@ -104,18 +107,24 @@ class ParentRecyclerView :RecyclerView, OnInterceptListener {
         return  super.dispatchTouchEvent(ev)
     }
 
+    override fun requestDisallowInterceptTouchEvent(disallowIntercept: Boolean) {
+        super.requestDisallowInterceptTouchEvent(disallowIntercept)
+        childDisallowIntercept = disallowIntercept
+    }
+
     private fun dispatchConflictTouchEvent(ev: MotionEvent){
         //Log.e("xx","dispatchConfict action=${ev.action},dy=${ev.y}")
         velocity?:{
             velocity = VelocityTracker.obtain()
-        }.invoke()
+        }()
         velocity?.addMovement(ev)
         when(ev.action){
             MotionEvent.ACTION_DOWN ->{
-                startdx = ev.x
-                startdy = ev.y
+                startDx = ev.x
+                startDy = ev.y
+                isSlideDy = false
                 velocityY = 0
-                isMoveY = false
+                childDisallowIntercept = false
             }
             MotionEvent.ACTION_MOVE ->{
                 conflictTouchEvent(ev)
@@ -135,23 +144,27 @@ class ParentRecyclerView :RecyclerView, OnInterceptListener {
 
     private fun conflictTouchEvent(ev: MotionEvent){
         /** 纵向滑动处理，横向滑动过滤*/
-        if(isMoveY || Math.abs(ev.y-startdy) > Math.abs(ev.x-startdx)){
-            isMoveY = true
+            if(!isSlideDy){
+                val dy = abs(ev.y-startDy)
+                val dx = abs(ev.x-startDx)
+                if(dy>dx && dy>mTouchSlop){
+                    isSlideDy = true
+                }
+            }
             /** true 在底部*/
             val isBottom = !canScrollVertically(1)
             /** true向上滑动*/
-            val directUp = (ev.y - startdy) < 0
+            val directUp = (ev.y - startDy) < 0
             //Log.e("xx","isBootom=$isBottom,directUp=$directUp,ischildTop=$isChildTop,y=${ev.y},isselftouch=$isSelfTouch")
             if(isBottom){
                 if(isChildTop && !directUp){
                     dispatchSelfTouch(ev)
-                }else{
+                }else if(isSlideDy && !childDisallowIntercept){
                     dispatchChildTouch(ev)
                 }
             }else{
                 dispatchSelfTouch(ev)
             }
-        }
     }
 
     /** 给selft view分发*/
@@ -167,16 +180,17 @@ class ParentRecyclerView :RecyclerView, OnInterceptListener {
     private fun dispatchChildTouch(ev: MotionEvent){
         if (isSelfTouch){
             isSelfTouch = false
-            var childY = 0
             val manager = layoutManager
+            var dy = ev.y
             if(manager is LinearLayoutManager){
                 val first = manager.findFirstVisibleItemPosition()
                 val total = manager.itemCount - 1
-                childY = manager.getChildAt(total - first)?.top ?: 0
+                manager.getChildAt(total - first)?.let{
+                    dy = max(it.top.toFloat(),dy)
+                }
             }
-            dispatchTouchEvent(obtainCancelEvent(ev.x,ev.y))
-
-            dispatchTouchEvent(obtainDownEvent(ev.x,Math.max(childY.toFloat(),ev.y)))
+            dispatchTouchEvent(obtainCancelEvent(ev.x,dy))
+            dispatchTouchEvent(obtainDownEvent(ev.x,dy))
             requestDisallowInterceptTouchEvent(true)
         }
     }
