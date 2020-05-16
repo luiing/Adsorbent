@@ -7,18 +7,15 @@
 package com.uis.adsorbent
 
 import android.content.Context
-import android.os.SystemClock
 import android.support.v7.widget.LinearLayoutManager
 import android.support.v7.widget.RecyclerView
 import android.util.AttributeSet
-import android.util.Log
 import android.view.*
 import kotlin.math.abs
-import kotlin.math.max
 
 class ParentRecyclerView :RecyclerView, OnInterceptListener {
-    constructor(context: Context) : super(context)
-    constructor(context: Context, attrs: AttributeSet?) : super(context, attrs)
+    constructor(context: Context) : this(context,null)
+    constructor(context: Context, attrs: AttributeSet?) : this(context, attrs,0)
     constructor(context: Context, attrs: AttributeSet?, defStyle: Int) : super(context, attrs, defStyle)
 
     private var isChildTop = true
@@ -112,7 +109,6 @@ class ParentRecyclerView :RecyclerView, OnInterceptListener {
     }
 
     private fun dispatchConflictTouchEvent(ev: MotionEvent){
-        //Log.e("xx","dispatchConfict action=${ev.action},dy=${ev.y}")
         velocity?:{
             velocity = VelocityTracker.obtain()
         }()
@@ -140,38 +136,35 @@ class ParentRecyclerView :RecyclerView, OnInterceptListener {
         }
     }
 
-
     private fun conflictTouchEvent(ev: MotionEvent){
         /** 纵向滑动处理，横向滑动过滤*/
-            if(!isSlideDy){
-                val dy = abs(ev.y-startDy)
-                val dx = abs(ev.x-startDx)
-                if((dy>dx/2 && dx>mTouchSlop)||dy>mTouchSlop){
-                    isSlideDy = true
-                }
+        if(!isSlideDy){
+            val dy = abs(ev.y-startDy)
+            val dx = abs(ev.x-startDx)
+            if((dy>dx/2 && dx>mTouchSlop)||dy>mTouchSlop){
+                isSlideDy = true
             }
-            /** true 在底部*/
-            val isBottom = !canScrollVertically(1)
-            /** true向上滑动*/
-            val directUp = (ev.y - startDy) < 0
-            //Log.e("xx","isBootom=$isBottom,directUp=$directUp,ischildTop=$isChildTop,y=${ev.y},isselftouch=$isSelfTouch")
-            if(isBottom){
-                if(isChildTop && !directUp){
-                    dispatchSelfTouch(ev)
-                }else if(isSlideDy && !childDisallowIntercept){
-                    dispatchChildTouch(ev)
-                }
-            }else{
+        }
+        /** true 在底部*/
+        val isBottom = !canScrollVertically(1)
+        /** true向上滑动*/
+        val directUp = (ev.y - startDy) < 0
+        if(isBottom){
+            if(isChildTop && !directUp){
                 dispatchSelfTouch(ev)
+            }else if(isSlideDy && !childDisallowIntercept){
+                dispatchChildTouch(ev)
             }
+        }else{
+            dispatchSelfTouch(ev)
+        }
     }
 
     /** 给selft view分发*/
     private fun dispatchSelfTouch(ev: MotionEvent){
         if(!isSelfTouch){
             isSelfTouch = true
-            dispatchTouchEvent(obtainCancelEvent(ev.x, ev.y))
-            dispatchTouchEvent(obtainDownEvent(ev.x, ev.y))
+            requestDisallowInterceptTouchEvent(false)
         }
     }
 
@@ -179,33 +172,19 @@ class ParentRecyclerView :RecyclerView, OnInterceptListener {
     private fun dispatchChildTouch(ev: MotionEvent){
         if (isSelfTouch){
             isSelfTouch = false
-            val manager = layoutManager
-            var dy = ev.y
-            if(manager is LinearLayoutManager){
-                val first = manager.findFirstVisibleItemPosition()
-                val total = manager.itemCount - 1
-                manager.getChildAt(total - first)?.let{
-                    val top = it.top.toFloat()
-                    if(startDy < top)
-                        dy = max(top,dy)
+            val cancel = MotionEvent.obtain(ev)
+            cancel.action = MotionEvent.ACTION_CANCEL
+            onTouchEvent(cancel)
+
+            val down = MotionEvent.obtainNoHistory(ev)
+            down.action = MotionEvent.ACTION_DOWN
+            layoutManager?.let {
+                it.getChildAt(it.childCount-1)?.apply {
+                    down.offsetLocation(left.toFloat(),top.toFloat())
                 }
             }
-            dispatchTouchEvent(obtainCancelEvent(ev.x,dy))
-            dispatchTouchEvent(obtainDownEvent(ev.x,dy))
+            dispatchTouchEvent(down)
             requestDisallowInterceptTouchEvent(true)
         }
-    }
-
-    private fun obtainDownEvent(dx :Float, dy :Float) :MotionEvent{
-        return obtainActionEvent(MotionEvent.ACTION_DOWN,dx,dy)
-    }
-
-    private fun obtainCancelEvent(dx :Float, dy :Float) :MotionEvent{
-        return obtainActionEvent(MotionEvent.ACTION_CANCEL,dx,dy)
-    }
-
-    private fun obtainActionEvent(action :Int,dx :Float, dy :Float) :MotionEvent{
-        val now = SystemClock.uptimeMillis()
-        return MotionEvent.obtain(now,now,action,dx,dy,0)
     }
 }

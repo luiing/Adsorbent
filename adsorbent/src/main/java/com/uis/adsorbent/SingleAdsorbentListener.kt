@@ -32,7 +32,6 @@ abstract class SingleAdsorbentListener : RecyclerView.OnScrollListener(){
             val last = manager.findLastVisibleItemPosition()
             //val down = recyclerView.canScrollVertically(1)
             //val up = recyclerView.canScrollVertically(-1)
-            //Log.e("xx", "first=$first, vertically down=$down, up=$up, dy=$dy")
             val position = getPinViewPosition()
             if (first >= position && dy > 0) {
                 addPin2Ui(recyclerView,position)

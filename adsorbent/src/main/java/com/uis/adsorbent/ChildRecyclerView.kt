@@ -9,13 +9,12 @@ package com.uis.adsorbent
 import android.content.Context
 import android.support.v7.widget.RecyclerView
 import android.util.AttributeSet
-import android.util.Log
 import android.view.MotionEvent
 import java.lang.ref.WeakReference
 
 class ChildRecyclerView :RecyclerView{
-    constructor(context: Context) : super(context)
-    constructor(context: Context, attrs: AttributeSet?) : super(context, attrs)
+    constructor(context: Context) : this(context,null)
+    constructor(context: Context, attrs: AttributeSet?) : this(context, attrs,0)
     constructor(context: Context, attrs: AttributeSet?, defStyle: Int) : super(context, attrs, defStyle)
 
     /** true 开启滑动冲突处理*/
@@ -54,6 +53,6 @@ class ChildRecyclerView :RecyclerView{
                 pv = pv.parent
             }
             pv as? OnInterceptListener
-        }.invoke())?.onTopChild(!canScrollVertically(-1))
+        }())?.onTopChild(!canScrollVertically(-1))
     }
 }

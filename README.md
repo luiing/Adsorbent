@@ -1,5 +1,4 @@
-
-### 吸顶解决方案(终极版)
+# 吸顶终极版
 
     1. Single RecyclerView：简单模式
     【利用RecyclerView.OnScrollListener监听滑动位置，吸顶View被 ViewHolder和Activity复用】
@@ -11,7 +10,7 @@
     【事件分发，吸顶View是个单独ViewHolder,无须做其他处理】
     
 ### USE by Kotlin
-    implementation 'com.uis:adsorbent:0.3.6
+    implementation 'com.uis:adsorbent:0.4.0
     implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlin_version"
     implementation "com.android.support:recyclerview-v7:$supportVer"
     
@@ -33,6 +32,8 @@ Version|Descipt|Fixed|Time
 0.3.4|fixed|吸顶后子view不在顶部时父类在动|2020/02
 0.3.5|fixed|吸顶后对view滑动事件放行处理|2020/03
 0.3.6|fixed|纵向滑动判断|2020/03
+0.4.0|优化|事件分发优化|2020/05
+
 ### USE
 ##### 事件分发ParentRecyclerView设置
     /** true 开启滑动冲突处理(默认true)*/

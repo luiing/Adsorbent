@@ -118,7 +118,11 @@ class TxtVH(parent: ViewGroup) : GroupHolder<String>(R.layout.ui_item_txt,parent
 
     init {
         itemView.setOnClickListener{
-            Log.e("cc","click txt here")
+            Toast.makeText(it.context,"click txt here",Toast.LENGTH_SHORT).show()
+            Log.e("xx","onCLicked")
+        }
+        itemView.setOnLongClickListener{
+            return@setOnLongClickListener true
         }
     }
     override fun bindVH(item: String) {
