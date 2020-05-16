@@ -12,6 +12,7 @@ import android.support.v7.widget.RecyclerView
 import android.util.AttributeSet
 import android.view.*
 import kotlin.math.abs
+import kotlin.math.max
 
 class ParentRecyclerView :RecyclerView, OnInterceptListener {
     constructor(context: Context) : this(context,null)
@@ -133,6 +134,7 @@ class ParentRecyclerView :RecyclerView, OnInterceptListener {
                 }
                 velocity = null
             }
+            MotionEvent.ACTION_CANCEL->velocity?.clear()
         }
     }
 
@@ -175,14 +177,8 @@ class ParentRecyclerView :RecyclerView, OnInterceptListener {
             val cancel = MotionEvent.obtain(ev)
             cancel.action = MotionEvent.ACTION_CANCEL
             onTouchEvent(cancel)
-
-            val down = MotionEvent.obtainNoHistory(ev)
-            down.action = MotionEvent.ACTION_DOWN
-            layoutManager?.let {
-                it.getChildAt(it.childCount-1)?.apply {
-                    down.offsetLocation(left.toFloat(),top.toFloat())
-                }
-            }
+            val dy = max(ev.y, layoutManager?.getChildAt(childCount-1)?.top?.toFloat() ?:0f)
+            val down = MotionEvent.obtain(ev.downTime,ev.eventTime,MotionEvent.ACTION_DOWN,ev.x,dy,0)
             dispatchTouchEvent(down)
             requestDisallowInterceptTouchEvent(true)
         }
