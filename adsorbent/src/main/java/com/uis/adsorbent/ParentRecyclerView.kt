@@ -14,7 +14,7 @@ import android.view.*
 import kotlin.math.abs
 import kotlin.math.max
 
-class ParentRecyclerView :RecyclerView, OnInterceptListener {
+class ParentRecyclerView :RecyclerView, OnFlingListener {
     constructor(context: Context) : this(context,null)
     constructor(context: Context, attrs: AttributeSet?) : this(context, attrs,0)
     constructor(context: Context, attrs: AttributeSet?, defStyle: Int) : super(context, attrs, defStyle)
@@ -22,8 +22,7 @@ class ParentRecyclerView :RecyclerView, OnInterceptListener {
     private var isChildTop = true
     private var startDy = 0f
     private var startDx = 0f
-    private var isSlideDy = false
-    private var childDisallowIntercept = false
+    private var swipSlideVertical = false
     private var velocity : VelocityTracker? = null
     private var velocityY = 0
     private var isSelfTouch = true
@@ -35,13 +34,16 @@ class ParentRecyclerView :RecyclerView, OnInterceptListener {
     var enableParentChain = false
     /** 开启快速滚动child带动parent联动效果*/
     var enableChildChain = true
+    private var draggingY = 0
+    private var draggingTime = 0L
+    private var disallowIntercept = false
 
     init {
         mTouchSlop = ViewConfiguration.get(context).scaledTouchSlop
         addOnScrollListener(object :OnScrollListener(){
             override fun onScrollStateChanged(recyclerView: RecyclerView, newState: Int) {
                 /** 滚动停止且到了底部,快速滑动事件下发给child view*/
-                if(enableParentChain && SCROLL_STATE_IDLE == newState && !canScrollVertically(1) && velocityY != 0){
+                if(enableParentChain && SCROLL_STATE_IDLE == newState && isScrollBottom() && velocityY != 0 && isChildTop){
                     val manager = layoutManager
                     if(manager is LinearLayoutManager){
                         val first = manager.findFirstVisibleItemPosition()
@@ -50,6 +52,15 @@ class ParentRecyclerView :RecyclerView, OnInterceptListener {
                             searchViewGroup(recyclerView,it)
                         }
                     }
+                }else if(SCROLL_STATE_DRAGGING == newState){
+                    draggingY = 0
+                    draggingTime = System.currentTimeMillis()
+                }
+            }
+
+            override fun onScrolled(recyclerView: RecyclerView, dx: Int, dy: Int) {
+                if(SCROLL_STATE_DRAGGING == scrollState) {
+                    draggingY += dy
                 }
             }
 
@@ -77,8 +88,10 @@ class ParentRecyclerView :RecyclerView, OnInterceptListener {
                 child.getLocationOnScreen(locChild)
                 val childX = locChild[0]
                 val parentX = locParent[0]
-                if (childX >= parentX && childX< (parentX+parent.measuredWidth) && child is RecyclerView) {
-                    child.fling(0, velocityY/2)
+                if (childX >= parentX && childX< (parentX+parent.measuredWidth) && child is OnChildFlingListener) {
+                    val step = (System.currentTimeMillis()-draggingTime).toInt()
+                    val speed = velocityY - 1000*draggingY/max(1000,step)
+                    child.onChildFling(speed)
                     return true
                 }
                 return false
@@ -86,46 +99,48 @@ class ParentRecyclerView :RecyclerView, OnInterceptListener {
         })
     }
 
-    override fun onTopChild(isTop: Boolean) {
+    override fun onScrollTop(isTop: Boolean) {
         isChildTop = isTop
     }
 
-    override fun onScrollChain() {
+    override fun onFling(childSpeed: Int) {
         /** child带动parent联动效果,快速滑动事件下发给self view*/
         if(enableChildChain && isChildTop ) {
-            fling(0,velocityY/2)
+            fling(0,velocityY-childSpeed)
         }
+    }
+
+    override fun requestDisallowInterceptTouchEvent(disallowIntercept: Boolean) {
+        super.requestDisallowInterceptTouchEvent(disallowIntercept)
+        this.disallowIntercept = disallowIntercept
     }
 
     override fun dispatchTouchEvent(ev: MotionEvent): Boolean {
         if(enableConflict){
             dispatchConflictTouchEvent(ev)
         }
-        return  super.dispatchTouchEvent(ev)
-    }
-
-    override fun requestDisallowInterceptTouchEvent(disallowIntercept: Boolean) {
-        super.requestDisallowInterceptTouchEvent(disallowIntercept)
-        childDisallowIntercept = disallowIntercept
+        return super.dispatchTouchEvent(ev)
     }
 
     private fun dispatchConflictTouchEvent(ev: MotionEvent){
-        velocity?:{
-            velocity = VelocityTracker.obtain()
-        }()
+        velocity = velocity?:VelocityTracker.obtain()
         velocity?.addMovement(ev)
         when(ev.action){
             MotionEvent.ACTION_DOWN ->{
                 startDx = ev.x
                 startDy = ev.y
-                isSlideDy = false
+                swipSlideVertical = false
+                disallowIntercept = false
                 velocityY = 0
-                childDisallowIntercept = false
             }
             MotionEvent.ACTION_MOVE ->{
                 conflictTouchEvent(ev)
             }
             MotionEvent.ACTION_UP ->{
+                /**fixed刚吸顶会触发点击事件*/
+                if(!isUseTouchSlop(ev) && !swipSlideVertical && isScrollBottom()){
+                    ev.action = MotionEvent.ACTION_CANCEL
+                }
                 isSelfTouch = true
                 velocity?.let {
                     it.computeCurrentVelocity(1000, maxFlingVelocity.toFloat())
@@ -138,29 +153,35 @@ class ParentRecyclerView :RecyclerView, OnInterceptListener {
         }
     }
 
+    private fun isUseTouchSlop(ev: MotionEvent):Boolean{
+        val isClicked = startDx == ev.x && startDy == ev.y
+        val isTouchSlop = abs(startDx-ev.x)>mTouchSlop || abs(startDy-ev.y)>mTouchSlop
+        return isClicked || isTouchSlop
+    }
+
     private fun conflictTouchEvent(ev: MotionEvent){
         /** 纵向滑动处理，横向滑动过滤*/
-        if(!isSlideDy){
+        if(!swipSlideVertical){
             val dy = abs(ev.y-startDy)
             val dx = abs(ev.x-startDx)
-            if((dy>dx/2 && dx>mTouchSlop)||dy>mTouchSlop){
-                isSlideDy = true
+            if((dx>mTouchSlop && dy>dx/2) || dy>mTouchSlop){
+                swipSlideVertical = true
             }
         }
-        /** true 在底部*/
-        val isBottom = !canScrollVertically(1)
         /** true向上滑动*/
         val directUp = (ev.y - startDy) < 0
-        if(isBottom){
+        if(isScrollBottom()){
             if(isChildTop && !directUp){
                 dispatchSelfTouch(ev)
-            }else if(isSlideDy && !childDisallowIntercept){
+            }else if(swipSlideVertical && !disallowIntercept){
                 dispatchChildTouch(ev)
             }
         }else{
             dispatchSelfTouch(ev)
         }
     }
+
+    private fun isScrollBottom()=!canScrollVertically(1)
 
     /** 给selft view分发*/
     private fun dispatchSelfTouch(ev: MotionEvent){
@@ -174,13 +195,17 @@ class ParentRecyclerView :RecyclerView, OnInterceptListener {
     private fun dispatchChildTouch(ev: MotionEvent){
         if (isSelfTouch){
             isSelfTouch = false
-            val cancel = MotionEvent.obtain(ev)
-            cancel.action = MotionEvent.ACTION_CANCEL
-            onTouchEvent(cancel)
+            cancelTouchEvent(ev)
             val dy = max(ev.y, layoutManager?.getChildAt(childCount-1)?.top?.toFloat() ?:0f)
             val down = MotionEvent.obtain(ev.downTime,ev.eventTime,MotionEvent.ACTION_DOWN,ev.x,dy,0)
             dispatchTouchEvent(down)
             requestDisallowInterceptTouchEvent(true)
         }
+    }
+
+    private fun cancelTouchEvent(ev: MotionEvent){
+        val cancel = MotionEvent.obtain(ev)
+        cancel.action = MotionEvent.ACTION_CANCEL
+        onTouchEvent(cancel)
     }
 }
