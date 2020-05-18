@@ -1,5 +1,4 @@
-
-### 吸顶解决方案(终极版)
+# 吸顶终极版
 
     1. Single RecyclerView：简单模式
     【利用RecyclerView.OnScrollListener监听滑动位置，吸顶View被 ViewHolder和Activity复用】
@@ -9,12 +8,14 @@
     
     3. Viewpager RecyclerView:RecyclerView嵌套ViewPager(其中包含的页面内容是RecyclerView)
     【事件分发，吸顶View是个单独ViewHolder,无须做其他处理】
+
+    4. 拓展View需要调用ParentRecyclerView接口OnFlingListener,并实现OnChildFlingListener
+     【拓展View支持下拉刷新parent.onScrollBottom(false),支持联动onChildFling(speed: Int)】
     
 ### USE by Kotlin
-    implementation 'com.uis:adsorbent:0.3.2
+    implementation 'com.uis:adsorbent:0.4.1
     implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlin_version"
     implementation "com.android.support:recyclerview-v7:$supportVer"
-    
 
 ``` 项目中使用的是compileOnly,使用者需自行加入外部依赖库 ```
 
@@ -22,13 +23,19 @@
 
 Version|Descipt|Fixed|Time
 ----|----|----|----
-0.1.1|初始版本| |2019/05
-0.1.2|新增|快速滑动联动效果|2019/05
-0.1.3|更改|快速滑动联动处理|2019/05
-0.2.0|优化|联动平滑过渡,冲突后重新分发|2019/05
-0.2.1|优化|联动支持fling|2019/05
-0.3.0|优化|冲突事件分发优化,更简单易懂|2019/06
+0.1.1|初始版本| |2019/5
+0.1.2|新增|快速滑动联动效果|2019/5
+0.1.3|更改|快速滑动联动处理|2019/5
+0.2.0|优化|联动平滑过渡,冲突后重新分发|2019/5
+0.2.1|优化|联动支持fling|2019/5
+0.3.0|优化|冲突事件分发优化,更简单易懂|2019/6
 0.3.2|fixed|The specified child already has a parent. You must call removeView() on the child's parent first|2019/10
+0.3.3|fixed|联动子view效果|2020/2
+0.3.4|fixed|吸顶后子view不在顶部时父类在动|2020/2
+0.3.5|fixed|吸顶后对view滑动事件放行处理|2020/3
+0.3.6|fixed|纵向滑动判断|2020/3
+0.4.0|优化|优化事件分发|2020/5
+0.4.1|优化|优化fling联动速度,支持拓展|2020/5
 
 ### USE
 ##### 事件分发ParentRecyclerView设置
@@ -47,6 +54,8 @@ Version|Descipt|Fixed|Time
             override fun getPinView(): View = pin
             /** 获取吸顶View在RecyclerView中的位置*/
             override fun getPinViewPosition(): Int = 15
+            /** 吸顶的时候 true:停止滚动并定位在吸顶位置,false:可以继续fling*/
+            override fun stopWhenAdsorbent(): Boolean = false
         })
 ##### Double
     //recyclerView is ParentRecyclerView
