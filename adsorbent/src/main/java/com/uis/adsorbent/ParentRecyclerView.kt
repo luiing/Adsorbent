@@ -10,6 +10,7 @@ import android.content.Context
 import android.support.v7.widget.LinearLayoutManager
 import android.support.v7.widget.RecyclerView
 import android.util.AttributeSet
+import android.util.Log
 import android.view.*
 import kotlin.math.abs
 import kotlin.math.max
@@ -37,6 +38,7 @@ class ParentRecyclerView :RecyclerView, OnFlingListener {
     private var draggingY = 0
     private var draggingTime = 0L
     private var disallowIntercept = false
+    private var cancelTouch = false
 
     init {
         mTouchSlop = ViewConfiguration.get(context).scaledTouchSlop
@@ -91,7 +93,7 @@ class ParentRecyclerView :RecyclerView, OnFlingListener {
                 if (childX >= parentX && childX< (parentX+parent.measuredWidth) && child is OnChildFlingListener) {
                     val step = (System.currentTimeMillis()-draggingTime).toInt()
                     val speed = velocityY - 1000*draggingY/max(1000,step)
-                    child.onChildFling(speed)
+                    child.onChildFling(speed/2)
                     return true
                 }
                 return false
@@ -106,7 +108,8 @@ class ParentRecyclerView :RecyclerView, OnFlingListener {
     override fun onFling(childSpeed: Int) {
         /** child带动parent联动效果,快速滑动事件下发给self view*/
         if(enableChildChain && isChildTop ) {
-            fling(0,velocityY-childSpeed)
+            val speed = velocityY-childSpeed
+            fling(0,speed/2)
         }
     }
 
@@ -123,6 +126,7 @@ class ParentRecyclerView :RecyclerView, OnFlingListener {
     }
 
     private fun dispatchConflictTouchEvent(ev: MotionEvent){
+        //Log.e("xx","action=${ev.action},dx=${ev.x},dy=${ev.y},$startDx,$startDy")
         velocity = velocity?:VelocityTracker.obtain()
         velocity?.addMovement(ev)
         when(ev.action){
@@ -138,25 +142,24 @@ class ParentRecyclerView :RecyclerView, OnFlingListener {
             }
             MotionEvent.ACTION_UP ->{
                 /**fixed刚吸顶会触发点击事件*/
-                if(!isUseTouchSlop(ev) && !swipSlideVertical && isScrollBottom()){
+                //Log.e("xx","${!swipSlideVertical},${isScrollBottom()},${cancelTouch}")
+                if(cancelTouch && !swipSlideVertical && isScrollBottom()){
                     ev.action = MotionEvent.ACTION_CANCEL
                 }
                 isSelfTouch = true
+                cancelTouch = false
                 velocity?.let {
                     it.computeCurrentVelocity(1000, maxFlingVelocity.toFloat())
-                    velocityY = -it.yVelocity.toInt()
+                    velocityY = -it.getYVelocity(0).toInt()//.yVelocity.toInt()
                     velocity?.recycle()
                 }
                 velocity = null
             }
-            MotionEvent.ACTION_CANCEL->velocity?.clear()
+            MotionEvent.ACTION_CANCEL->{
+                cancelTouch = true
+                velocity?.clear()
+            }
         }
-    }
-
-    private fun isUseTouchSlop(ev: MotionEvent):Boolean{
-        val isClicked = startDx == ev.x && startDy == ev.y
-        val isTouchSlop = abs(startDx-ev.x)>mTouchSlop || abs(startDy-ev.y)>mTouchSlop
-        return isClicked || isTouchSlop
     }
 
     private fun conflictTouchEvent(ev: MotionEvent){
@@ -195,7 +198,7 @@ class ParentRecyclerView :RecyclerView, OnFlingListener {
     private fun dispatchChildTouch(ev: MotionEvent){
         if (isSelfTouch){
             isSelfTouch = false
-            cancelTouchEvent(ev)
+            dispatchCancelTouch(ev)
             val dy = max(ev.y, layoutManager?.getChildAt(childCount-1)?.top?.toFloat() ?:0f)
             val down = MotionEvent.obtain(ev.downTime,ev.eventTime,MotionEvent.ACTION_DOWN,ev.x,dy,0)
             dispatchTouchEvent(down)
@@ -203,9 +206,9 @@ class ParentRecyclerView :RecyclerView, OnFlingListener {
         }
     }
 
-    private fun cancelTouchEvent(ev: MotionEvent){
+    private fun dispatchCancelTouch(ev: MotionEvent){
         val cancel = MotionEvent.obtain(ev)
         cancel.action = MotionEvent.ACTION_CANCEL
-        onTouchEvent(cancel)
+        dispatchTouchEvent(cancel)
     }
 }
