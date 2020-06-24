@@ -7,11 +7,13 @@
 package com.uis.adsorbent.demo.holder
 
 import android.support.v4.view.PagerAdapter
+import android.support.v4.widget.SwipeRefreshLayout
 import android.support.v7.widget.LinearLayoutManager
 import android.support.v7.widget.RecyclerView
 import android.view.View
 import android.view.ViewGroup
 import android.widget.FrameLayout
+import com.andview.refreshview.XRefreshView
 import com.uis.adsorbent.ChildRecyclerView
 import com.uis.groupadapter.GroupEntity
 import java.util.*
@@ -25,19 +27,24 @@ class SimplePagerAdapter : PagerAdapter(){
             view = views.removeLast()
         }
         if(view == null){
+            val refresh = XRefreshView(container.context)//SwipeRefreshLayout(container.context)//XRefreshView(container.context)
             val v = ChildRecyclerView(container.context)
             v.layoutManager = LinearLayoutManager(container.context)
-            view = v
-        }
-        view as RecyclerView
-            if(view.adapter == null){
+
+            refresh.addView(v)
+            view = refresh
+
+
+            if(v.adapter == null){
                 val adapter = DemoGroupAdapter()
                 for(i in 0 until 50) {
                     adapter.addEntity(GroupEntity(VT_TXT, "ViewPager嵌套RecyclerView item $i"))
                 }
-                view.adapter = adapter
+                v.adapter = adapter
             }
-        view.scrollToPosition(0)
+            v.scrollToPosition(0)
+        }
+
 
 
         container.addView(view)

@@ -27,6 +27,7 @@ class ViewpagerRecyclerUi: AppCompatActivity() {
         //Fresco.initialize(applicationContext)
         super.onCreate(savedInstanceState)
         setContentView(R.layout.ui_demo)
+
         pin = layoutInflater.inflate(R.layout.ui_view_pin,null)
         pin.bt_add.setOnClickListener{
 
@@ -35,13 +36,13 @@ class ViewpagerRecyclerUi: AppCompatActivity() {
 
         }
         adapter.initGroup(10)
-        for(i in 0 until 5) {
+        for(i in 0 until 2) {
             adapter.addEntity(GroupEntity(VT_TXT, "txt $i"))
         }
-        for(i in 0 until 5) {
+        for(i in 0 until 2) {
             adapter.addEntity(GroupEntity(VT_TXT_BLUE, "txt blue $i"))
         }
-        for(i in 0 until 5) {
+        for(i in 0 until 2) {
             adapter.addEntity(GroupEntity(VT_TXT, "txt position $i"))
         }
         adapter.addEntity(GroupEntity(VT_PIN,pin))
@@ -51,6 +52,7 @@ class ViewpagerRecyclerUi: AppCompatActivity() {
         recyclerView.layoutManager = manager
         recyclerView.adapter = adapter
         recyclerView.enableParentChain = true
+        recyclerView.enableChildSwipeRefresh = true
     }
 
 
