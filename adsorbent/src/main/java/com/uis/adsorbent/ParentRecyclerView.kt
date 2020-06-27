@@ -23,12 +23,11 @@ class ParentRecyclerView :RecyclerView, OnFlingListener {
     private var isChildTop = true
     private var startDy = 0f
     private var startDx = 0f
-    private var swipSlideVertical = false
+    private var swipeSlideVertical = false
     private var velocity : VelocityTracker? = null
     private var velocityY = 0
     private var isSelfTouch = true
     private var mTouchSlop = 0
-    private var isChildSwipeRefresh = false
 
     /** true 开启滑动冲突处理*/
     var enableConflict = true
@@ -135,7 +134,7 @@ class ParentRecyclerView :RecyclerView, OnFlingListener {
             MotionEvent.ACTION_DOWN ->{
                 startDx = ev.x
                 startDy = ev.y
-                swipSlideVertical = false
+                swipeSlideVertical = false
                 disallowIntercept = false
                 velocityY = 0
             }
@@ -145,10 +144,9 @@ class ParentRecyclerView :RecyclerView, OnFlingListener {
             MotionEvent.ACTION_UP ->{
                 /**fixed刚吸顶会触发点击事件*/
                 //Log.e("xx","${!swipSlideVertical},${isScrollBottom()},${cancelTouch}")
-                if(cancelTouch && !swipSlideVertical && isScrollBottom()){
+                if(cancelTouch && !swipeSlideVertical && isScrollBottom()){
                     ev.action = MotionEvent.ACTION_CANCEL
                 }
-                isChildSwipeRefresh = false
                 isSelfTouch = true
                 cancelTouch = false
                 velocity?.let {
@@ -167,11 +165,11 @@ class ParentRecyclerView :RecyclerView, OnFlingListener {
 
     private fun conflictTouchEvent(ev: MotionEvent){
         /** 纵向滑动处理，横向滑动过滤*/
-        if(!swipSlideVertical){
+        if(!swipeSlideVertical){
             val dy = abs(ev.y-startDy)
             val dx = abs(ev.x-startDx)
-            if((dx>mTouchSlop && dy>dx/2) || dy>mTouchSlop){
-                swipSlideVertical = true
+            if((dx>=mTouchSlop && dy>dx/2) || dy>=mTouchSlop){
+                swipeSlideVertical = true
             }
         }
         /** true向上滑动*/
@@ -179,14 +177,12 @@ class ParentRecyclerView :RecyclerView, OnFlingListener {
         if(isScrollBottom()){
             if(isChildTop && !directUp){
                 dispatchSelfTouch(ev)
-            }else if(swipSlideVertical && !disallowIntercept){
+            }else if(swipeSlideVertical && !disallowIntercept){
                 dispatchChildTouch(ev)
             }
         }else if(enableChildSwipeRefresh && isScrollTop() ){
-            Log.e("xx","directUp="+!directUp+",ischildswipe="+isChildSwipeRefresh)
             if(!directUp) {
-                isChildSwipeRefresh = true
-                dispatchChildSwipeRefresh(ev)
+                dispatchChildTouch(ev)
             }else{
                 dispatchSelfTouch(ev)
             }
@@ -218,25 +214,9 @@ class ParentRecyclerView :RecyclerView, OnFlingListener {
         }
     }
 
-    private fun dispatchChildSwipeRefresh(ev: MotionEvent){
-        if (isSelfTouch){
-            isSelfTouch = false
-            dispatchCancelTouch(ev)
-            val down = MotionEvent.obtain(ev.downTime,ev.eventTime,MotionEvent.ACTION_DOWN,ev.x,ev.y,0)
-            dispatchTouchEvent(down)
-            requestDisallowInterceptTouchEvent(true)
-        }
-    }
-
     private fun dispatchCancelTouch(ev: MotionEvent){
         val cancel = MotionEvent.obtain(ev)
         cancel.action = MotionEvent.ACTION_CANCEL
-        dispatchTouchEvent(cancel)
-    }
-
-    private fun dispatchUpTouch(ev: MotionEvent){
-        val cancel = MotionEvent.obtain(ev)
-        cancel.action = MotionEvent.ACTION_UP
         dispatchTouchEvent(cancel)
     }
 }
