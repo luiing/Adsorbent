@@ -9,11 +9,8 @@ package com.uis.adsorbent.demo.holder
 import android.support.v4.view.PagerAdapter
 import android.support.v4.widget.SwipeRefreshLayout
 import android.support.v7.widget.LinearLayoutManager
-import android.support.v7.widget.RecyclerView
 import android.view.View
 import android.view.ViewGroup
-import android.widget.FrameLayout
-import com.andview.refreshview.XRefreshView
 import com.uis.adsorbent.ChildRecyclerView
 import com.uis.groupadapter.GroupEntity
 import java.util.*
@@ -27,7 +24,7 @@ class SimplePagerAdapter : PagerAdapter(){
             view = views.removeLast()
         }
         if(view == null){
-            val refresh = XRefreshView(container.context)//SwipeRefreshLayout(container.context)//XRefreshView(container.context)
+            val refresh = SwipeRefreshLayout(container.context)//
             val v = ChildRecyclerView(container.context)
             v.layoutManager = LinearLayoutManager(container.context)
 
