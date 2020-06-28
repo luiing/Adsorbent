@@ -13,7 +13,7 @@
      【拓展View支持下拉刷新parent.onScrollBottom(false),支持联动onChildFling(speed: Int)】
     
 ### USE by Kotlin
-    implementation 'com.uis:adsorbent:0.4.2
+    implementation 'com.uis:adsorbent:0.5.0
     implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlin_version"
     implementation "com.android.support:recyclerview-v7:$supportVer"
 
@@ -36,6 +36,7 @@ Version|Descipt|Fixed|Time
 0.3.6|fixed|纵向滑动判断|2020/3
 0.4.0|优化|优化事件分发|2020/5
 0.4.2|优化|优化fling联动速度,支持拓展|2020/5
+0.5.0|新增|支持吸顶部分下拉刷新|2020/6
 
 ### USE
 ##### 事件分发ParentRecyclerView设置
@@ -45,6 +46,8 @@ Version|Descipt|Fixed|Time
     recyclerView.enableParentChain = false
     /** 开启快速滚动child带动parent联动效果(默认true)*/
     recyclerView.enableChildChain = true
+    /** 开启child下拉刷新(默认false)*/
+    recyclerView.enableChildSwipeRefresh = true
     
 ##### Single
     recyclerView.addOnScrollListener(object : SingleAdsorbentListener(){
