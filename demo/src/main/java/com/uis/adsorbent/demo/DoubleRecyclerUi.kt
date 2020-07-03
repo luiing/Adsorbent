@@ -34,13 +34,13 @@ class DoubleRecyclerUi: AppCompatActivity() {
 
         }
         adapter.initGroup(10)
-        for(i in 0 until 5) {
+        for(i in 0 until 3) {
             adapter.addEntity(GroupEntity(VT_TXT, "txt $i"))
         }
-        for(i in 0 until 5) {
+        for(i in 0 until 3) {
             adapter.addEntity(GroupEntity(VT_TXT_BLUE, "txt blue $i"))
         }
-        for(i in 0 until 5) {
+        for(i in 0 until 3) {
             adapter.addEntity(GroupEntity(VT_TXT, "txt position $i"))
         }
         adapter.addEntity(GroupEntity(VT_PIN,pin))
