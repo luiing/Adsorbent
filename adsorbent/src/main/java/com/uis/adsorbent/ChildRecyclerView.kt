@@ -71,6 +71,6 @@ class ChildRecyclerView :RecyclerView,OnChildFlingListener{
                 pv = pv.parent
             }
             pv as? com.uis.adsorbent.OnFlingListener
-        }())?.onScrollTop(!canScrollVertically(-1))
+        }())?.onScrollTop(!canScrollVertically(-1),top)
     }
 }
