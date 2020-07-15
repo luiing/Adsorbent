@@ -37,13 +37,13 @@ class ViewpagerRecyclerUi: AppCompatActivity() {
         }
         adapter.initGroup(10)
         for(i in 0 until 2) {
-            adapter.addEntity(GroupEntity(VT_TXT, "txt $i"))
+            //adapter.addEntity(GroupEntity(VT_TXT, "txt $i"))
         }
         for(i in 0 until 2) {
-            adapter.addEntity(GroupEntity(VT_TXT_BLUE, "txt blue $i"))
+            //adapter.addEntity(GroupEntity(VT_TXT_BLUE, "txt blue $i"))
         }
         for(i in 0 until 2) {
-            adapter.addEntity(GroupEntity(VT_TXT, "txt position $i"))
+            //adapter.addEntity(GroupEntity(VT_TXT, "txt position $i"))
         }
         adapter.addEntity(GroupEntity(VT_PIN,pin))
         adapter.addEntity(GroupEntity(VT_VIEWPAGER,""))
@@ -53,6 +53,7 @@ class ViewpagerRecyclerUi: AppCompatActivity() {
         recyclerView.adapter = adapter
         recyclerView.enableParentChain = true
         recyclerView.enableChildSwipeRefresh = true
+        recyclerView.singleScreen = true
     }
 
 

@@ -38,13 +38,13 @@ class SingleRecyclerUi: AppCompatActivity() {
         pin.bt_clear.setOnClickListener{
 
         }
-        for(i in 0 until 5) {
+        for(i in 0 until 3) {
             adapter.addEntity(GroupEntity(VT_TXT, "txt $i"))
         }
-        for(i in 0 until 5) {
+        for(i in 0 until 3) {
             adapter.addEntity(GroupEntity(VT_TXT_BLUE, "txt blue $i"))
         }
-        for(i in 0 until 5) {
+        for(i in 0 until 3) {
             adapter.addEntity(GroupEntity(VT_TXT, "txt position $i"))
         }
         adapter.addEntity(GroupEntity(VT_PIN_SINGLE,pin))

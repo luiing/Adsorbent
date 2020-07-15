@@ -39,5 +39,4 @@ dependencies {
     implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlin_version"
     implementation project(':adsorbent')
     implementation 'com.uis:groupadapter:0.4.0'
-    implementation 'com.huxq17.xrefreshview:xrefreshview:3.6.9'
 }
