@@ -39,6 +39,7 @@ class ParentRecyclerView :RecyclerView, OnFlingListener {
     /** 开启快速滚动child带动parent联动效果*/
     var enableChildChain = true
     var enableChildSwipeRefresh = false
+    var singleScreen = false
     private var draggingY = 0
     private var draggingTime = 0L
     private var disallowIntercept = false
@@ -181,7 +182,11 @@ class ParentRecyclerView :RecyclerView, OnFlingListener {
         val directUp = (ev.y - moveDownY) <= 0
         moveDownY = ev.y
         if(enableChildSwipeRefresh && isScrollTop()){
-            if (!directUp && !disallowIntercept) {
+            if(singleScreen){
+                if(swipeSlideVertical && !disallowIntercept) {
+                    dispatchChildTouch(ev)
+                }
+            }else if (!directUp && !disallowIntercept) {
                 swipeChildY = moveDownY
                 dispatchChildTouch(ev)
             } else if(  directUp && disallowIntercept && moveDownY < swipeChildY){
@@ -214,7 +219,7 @@ class ParentRecyclerView :RecyclerView, OnFlingListener {
             isSelfTouch = false
             dispatchCancelTouch(ev)
             val top = childTop + (layoutManager?.getChildAt(childCount-1)?.top?:0)
-            val dy = max(ev.y, top.toFloat())
+            val dy = if(singleScreen) ev.y else max(ev.y, top.toFloat())
             val down = MotionEvent.obtain(ev.downTime,ev.eventTime,MotionEvent.ACTION_DOWN,ev.x,dy,0)
             dispatchTouchEvent(down)
             requestDisallowInterceptTouchEvent(true)
