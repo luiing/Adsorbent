@@ -38,7 +38,9 @@ class ParentRecyclerView :RecyclerView, OnFlingListener {
     var enableParentChain = false
     /** 开启快速滚动child带动parent联动效果*/
     var enableChildChain = true
+    /** 开启吸顶子view支持下拉刷新*/
     var enableChildSwipeRefresh = false
+    /** 开启吸顶子view独占Parent高度，支持下拉刷新(enableChildSwipeRefresh=true)*/
     var singleScreen = false
     private var draggingY = 0
     private var draggingTime = 0L
@@ -218,9 +220,9 @@ class ParentRecyclerView :RecyclerView, OnFlingListener {
         if (isSelfTouch){
             isSelfTouch = false
             dispatchCancelTouch(ev)
-            val top = childTop + (layoutManager?.getChildAt(childCount-1)?.top?:0)
-            val dy = if(singleScreen) ev.y else max(ev.y, top.toFloat())
-            val down = MotionEvent.obtain(ev.downTime,ev.eventTime,MotionEvent.ACTION_DOWN,ev.x,dy,0)
+            //val top = childTop + (layoutManager?.getChildAt(childCount-1)?.top?:0)
+            //val dy = if(singleScreen) ev.y else max(ev.y, top.toFloat())
+            val down = MotionEvent.obtain(ev.downTime,ev.eventTime,MotionEvent.ACTION_DOWN,ev.x,ev.y,0)
             dispatchTouchEvent(down)
             requestDisallowInterceptTouchEvent(true)
         }

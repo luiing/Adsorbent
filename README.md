@@ -39,6 +39,7 @@ Version|Descipt|Fixed|Time
 0.5.0|新增|支持吸顶部分下拉刷新|2020/6
 0.5.1|fixed|吸顶部分下拉刷新事件冲突|2020/7
 0.5.5|fixed|内容在一个屏幕内支持下拉刷新|2020/7
+0.5.6|优化|要吸顶View与Parent交集以外区域，parent事件不传递给吸顶View|2020/7
 
 ### USE
 ##### 事件分发ParentRecyclerView设置
