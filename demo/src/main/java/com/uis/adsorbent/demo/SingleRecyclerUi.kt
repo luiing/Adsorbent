@@ -64,7 +64,7 @@ class SingleRecyclerUi: AppCompatActivity() {
             /** 获取吸顶View*/
             override fun getPinView(): View = pin
             /** 获取吸顶View在RecyclerView中的位置*/
-            override fun getPinViewPosition(): Int = 15
+            override fun getPinViewPosition(): Int = 9
 
             override fun stopWhenAdsorbent(): Boolean = false
         })
