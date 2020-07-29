@@ -20,13 +20,20 @@ class ParentRecyclerView :RecyclerView, OnFlingListener {
     constructor(context: Context, attrs: AttributeSet?) : this(context, attrs,0)
     constructor(context: Context, attrs: AttributeSet?, defStyle: Int) : super(context, attrs, defStyle)
 
+    private val ModelVertical = 1
+    private val ModelHorizontal = -1
+    private val ModelNone = 0
+
     private var isChildTop = true
     private var childTop = 0
     private var initDownY = 0f
     private var initDownX = 0f
+    /** move时y坐标*/
     private var moveDownY = 0f
+    /** 分发给ChildView时y坐标*/
     private var swipeChildY = 0f
-    private var swipeSlideVertical = false
+    //private var swipeSlideVertical = false
+    private var swipeModel = ModelNone
     private var velocity : VelocityTracker? = null
     private var velocityY = 0
     private var isSelfTouch = true
@@ -142,8 +149,8 @@ class ParentRecyclerView :RecyclerView, OnFlingListener {
                 initDownX = ev.x
                 initDownY = ev.y
                 moveDownY = initDownY
-                swipeSlideVertical = false
                 disallowIntercept = false
+                swipeModel = 0
                 velocityY = 0
             }
             MotionEvent.ACTION_MOVE ->{
@@ -151,7 +158,7 @@ class ParentRecyclerView :RecyclerView, OnFlingListener {
             }
             MotionEvent.ACTION_UP ->{
                 /**fixed刚吸顶会触发点击事件*/
-                if(cancelTouch && !swipeSlideVertical && isScrollBottom()){
+                if(cancelTouch && swipeModel==ModelNone && isScrollBottom()){
                     ev.action = MotionEvent.ACTION_CANCEL
                 }
                 swipeChildY = 0f
@@ -173,33 +180,37 @@ class ParentRecyclerView :RecyclerView, OnFlingListener {
 
     private fun conflictTouchEvent(ev: MotionEvent){
         /** 纵向滑动处理，横向滑动过滤*/
-        if(!swipeSlideVertical){
+        if(ModelNone == swipeModel){
             val dy = abs(ev.y-initDownY)
             val dx = abs(ev.x-initDownX)
             if((dx>=mTouchSlop && dy>dx/2) || dy>=mTouchSlop){
-                swipeSlideVertical = true
+                swipeModel = ModelVertical
+            }else if(dx>=mTouchSlop){
+                swipeModel = ModelHorizontal
             }
         }
         /** true向上滑动*/
         val directUp = (ev.y - moveDownY) <= 0
         moveDownY = ev.y
-        if(enableChildSwipeRefresh && isScrollTop()){
-            if(singleScreen){
-                if(swipeSlideVertical && !disallowIntercept) {
+        if(ModelNone!=swipeModel) {
+            if (enableChildSwipeRefresh && isScrollTop ()) {
+                if (singleScreen) {
+                    if (!disallowIntercept) {
+                        dispatchChildTouch(ev)
+                    }
+                } else if (!directUp && !disallowIntercept) {
+                    swipeChildY = moveDownY
+                    dispatchChildTouch(ev)
+                } else if (directUp && disallowIntercept && moveDownY < swipeChildY) {
+                    swipeChildY = 0f
+                    dispatchSelfTouch(ev)
+                }
+            } else if (isScrollBottom()) {
+                if (ModelVertical == swipeModel && isChildTop && !directUp) {
+                    dispatchSelfTouch(ev, true)
+                } else if (!disallowIntercept) {
                     dispatchChildTouch(ev)
                 }
-            }else if (!directUp && !disallowIntercept) {
-                swipeChildY = moveDownY
-                dispatchChildTouch(ev)
-            } else if(  directUp && disallowIntercept && moveDownY < swipeChildY){
-                swipeChildY = 0f
-                dispatchSelfTouch(ev)
-            }
-        }else if(isScrollBottom()){
-            if(isChildTop && !directUp){
-                dispatchSelfTouch(ev,true)
-            }else if(swipeSlideVertical && !disallowIntercept){
-                dispatchChildTouch(ev)
             }
         }
     }
