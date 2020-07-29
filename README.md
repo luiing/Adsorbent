@@ -13,7 +13,7 @@
      【拓展View支持下拉刷新parent.onScrollBottom(false),支持联动onChildFling(speed: Int)】
     
 ### USE by Kotlin
-    implementation 'com.uis:adsorbent:0.5.5
+    implementation 'com.uis:adsorbent:0.5.7
     implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlin_version"
     implementation "com.android.support:recyclerview-v7:$supportVer"
 
@@ -40,6 +40,7 @@ Version|Descipt|Fixed|Time
 0.5.1|fixed|吸顶部分下拉刷新事件冲突|2020/7
 0.5.5|fixed|内容在一个屏幕内支持下拉刷新|2020/7
 0.5.6|优化|要吸顶View与Parent交集以外区域，parent事件不传递给吸顶View|2020/7
+0.5.7|优化|刚吸顶时横向滑动和纵向冲突|2020/7
 
 ### USE
 ##### 事件分发ParentRecyclerView设置
