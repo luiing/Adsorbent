@@ -7,10 +7,10 @@
 package com.uis.adsorbent.demo
 
 import android.os.Bundle
-import android.support.v7.app.AppCompatActivity
-import android.support.v7.widget.LinearLayoutManager
 import android.view.View
 import android.view.ViewGroup
+import androidx.appcompat.app.AppCompatActivity
+import androidx.recyclerview.widget.LinearLayoutManager
 import com.uis.adsorbent.SingleAdsorbentListener
 import com.uis.adsorbent.demo.holder.DemoGroupAdapter
 import com.uis.adsorbent.demo.holder.VT_PIN_SINGLE

@@ -6,13 +6,17 @@
 
 package com.uis.adsorbent.demo.holder
 
-import android.support.v4.view.PagerAdapter
-import android.support.v4.widget.SwipeRefreshLayout
-import android.support.v7.widget.LinearLayoutManager
+import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
+import androidx.viewpager.widget.PagerAdapter
 import com.uis.adsorbent.ChildRecyclerView
+import com.uis.adsorbent.SingleAdsorbentListener
 import com.uis.groupadapter.GroupEntity
+import com.uis.groupadater.demo.R
+import kotlinx.android.synthetic.main.ui_demo.*
 import java.util.*
 
 class SimplePagerAdapter : PagerAdapter(){
@@ -28,16 +32,30 @@ class SimplePagerAdapter : PagerAdapter(){
             val v = ChildRecyclerView(container.context)
             v.layoutManager = LinearLayoutManager(container.context)
 
+
             refresh.addView(v)
             view = refresh
 
 
             if(v.adapter == null){
+                val layoutInflater = LayoutInflater.from(container.context)
+                val pin = layoutInflater.inflate(R.layout.ui_view_pin,null)
                 val adapter = DemoGroupAdapter()
                 for(i in 0 until 50) {
                     adapter.addEntity(GroupEntity(VT_TXT, "ViewPager嵌套RecyclerView item $i"))
                 }
+                adapter.changePositionEntity(5,GroupEntity(VT_PIN_SINGLE,pin))
                 v.adapter = adapter
+                v.addOnScrollListener(object : SingleAdsorbentListener(){
+                    /** 获取被吸顶ViewGroup*/
+                    override fun getUiViewGroup(): ViewGroup = refresh
+                    /** 获取吸顶View*/
+                    override fun getPinView(): View = pin
+                    /** 获取吸顶View在RecyclerView中的位置*/
+                    override fun getPinViewPosition(): Int = 5
+
+                    override fun stopWhenAdsorbent(): Boolean = false
+                })
             }
             v.scrollToPosition(0)
         }

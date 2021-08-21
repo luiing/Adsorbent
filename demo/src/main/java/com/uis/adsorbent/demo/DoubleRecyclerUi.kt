@@ -7,9 +7,9 @@
 package com.uis.adsorbent.demo
 
 import android.os.Bundle
-import android.support.v7.app.AppCompatActivity
-import android.support.v7.widget.LinearLayoutManager
 import android.view.View
+import androidx.appcompat.app.AppCompatActivity
+import androidx.recyclerview.widget.LinearLayoutManager
 import com.uis.adsorbent.demo.holder.*
 import com.uis.groupadapter.GroupEntity
 import com.uis.groupadater.demo.R

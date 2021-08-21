@@ -17,7 +17,7 @@ import kotlinx.android.synthetic.main.ui_demo.*
 import kotlinx.android.synthetic.main.ui_view_pin.view.*
 
 
-class ViewpagerRecyclerUi: AppCompatActivity() {
+class ViewpagerSwipeRefreshUi: AppCompatActivity() {
 
     val adapter = DemoGroupAdapter()
     lateinit var pin: View
@@ -46,7 +46,7 @@ class ViewpagerRecyclerUi: AppCompatActivity() {
             adapter.addEntity(GroupEntity(VT_TXT, "txt position $i"))
         }
         adapter.addEntity(GroupEntity(VT_PIN,pin))
-        adapter.addEntity(GroupEntity(VT_VIEWPAGER,""))
+        adapter.addEntity(GroupEntity(VT_VIEWPAGER_FULL,""))
 
         manager = LinearLayoutManager(this)
         recyclerView.layoutManager = manager

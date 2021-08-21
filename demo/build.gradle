@@ -17,9 +17,6 @@ android {
         targetSdkVersion targetVer
         versionCode 1
         versionName "1.0"
-        //ndk{
-             //abiFilters 'x86'//'armeabi-v7a'
-        //}
     }
 
     buildTypes {
@@ -33,9 +30,8 @@ android {
 
 dependencies {
     implementation fileTree(dir: 'libs', include: ['*.jar'])
-    implementation 'com.android.support:support-v4:'+supportVer
-    implementation 'com.android.support:appcompat-v7:'+supportVer
-    implementation 'com.android.support:recyclerview-v7:'+supportVer
+    implementation 'androidx.appcompat:appcompat:'+supportVer
+    implementation 'androidx.recyclerview:recyclerview:'+supportVer
     implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlin_version"
     implementation project(':adsorbent')
     implementation 'com.uis:groupadapter:0.4.0'

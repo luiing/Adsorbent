@@ -8,7 +8,7 @@ package com.uis.adsorbent.demo
 
 import android.content.Intent
 import android.os.Bundle
-import android.support.v7.app.AppCompatActivity
+import androidx.appcompat.app.AppCompatActivity
 import com.uis.groupadater.demo.R
 import kotlinx.android.synthetic.main.ui_demo_main.*
 
@@ -32,6 +32,10 @@ class DemoUi: AppCompatActivity() {
 
         bt_viewpager.setOnClickListener{
             val intent = Intent(this, ViewpagerRecyclerUi::class.java)
+            startActivity(intent)
+        }
+        bt_viewpager_full.setOnClickListener{
+            val intent = Intent(this, ViewpagerSwipeRefreshUi::class.java)
             startActivity(intent)
         }
     }

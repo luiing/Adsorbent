@@ -20,5 +20,6 @@
         <activity android:name="com.uis.adsorbent.demo.SingleRecyclerUi"/>
         <activity android:name="com.uis.adsorbent.demo.DoubleRecyclerUi"/>
         <activity android:name="com.uis.adsorbent.demo.ViewpagerRecyclerUi"/>
+        <activity android:name="com.uis.adsorbent.demo.ViewpagerSwipeRefreshUi"/>
     </application>
 </manifest>

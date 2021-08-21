@@ -6,7 +6,7 @@
 
 package com.uis.adsorbent
 
-internal interface OnFlingListener {
-    fun onScrollTop(isTop: Boolean,top:Int)
+internal interface IFling {
+    fun onStatus(isTop: Boolean,top:Int)
     fun onFling(childSpeed: Int)
 }

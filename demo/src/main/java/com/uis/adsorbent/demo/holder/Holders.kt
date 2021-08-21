@@ -6,14 +6,14 @@
 
 package com.uis.adsorbent.demo.holder
 
-import android.support.v4.view.ViewPager
-import android.support.v7.widget.LinearLayoutManager
-import android.support.v7.widget.RecyclerView
 import android.util.Log
 import android.util.TypedValue
 import android.view.View
 import android.view.ViewGroup
 import android.widget.Toast
+import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.RecyclerView
+import androidx.viewpager.widget.ViewPager
 import com.uis.groupadapter.GroupAdapter
 import com.uis.groupadapter.GroupEntity
 import com.uis.groupadapter.GroupHolder
@@ -31,6 +31,7 @@ const val VT_PIN   = 3
 const val VT_PIN_SINGLE  = 6
 const val VT_VIEWPAGER   = 4
 const val VT_RECYCLER   = 5
+const val VT_VIEWPAGER_FULL   = 7
 
 
 class DemoGroupAdapter : GroupAdapter(){
@@ -40,6 +41,7 @@ class DemoGroupAdapter : GroupAdapter(){
             VT_TXT_BLUE -> TxtBlueVH(parent)
             VT_PIN -> PinVH(parent)
             VT_VIEWPAGER -> ViewPagerVH(parent)
+            VT_VIEWPAGER_FULL -> ViewPagerFullVH(parent)
             VT_RECYCLER -> RecyclerVH(parent)
             VT_PIN_SINGLE -> PinSingleVH(parent)
             else         -> TxtVH(parent)
@@ -68,6 +70,32 @@ class RecyclerVH(parent: ViewGroup) : GroupHolder<String>(R.layout.ui_item_recyc
     }
 }
 
+class ViewPagerFullVH(parent: ViewGroup) : GroupHolder<String>(R.layout.ui_item_viewpager,parent){
+    init {
+        val viewpager = itemView.viewpager
+        val p = viewpager.layoutParams
+        p.height = parent.measuredHeight
+
+        viewpager.layoutParams = p
+        viewpager.adapter = SimplePagerAdapter()
+
+        viewpager.addOnPageChangeListener(object : ViewPager.SimpleOnPageChangeListener(){
+            override fun onPageSelected(p0: Int) {
+//                if(parent is RecyclerView){
+//                    /** 定位到吸顶位置*/
+//                    parent.layoutManager?.let {
+//                        parent.scrollToPosition(it.itemCount-1)
+//                    }
+//                }
+            }
+        })
+    }
+
+    override fun bindVH(item: String) {
+
+    }
+}
+
 class ViewPagerVH(parent: ViewGroup) : GroupHolder<String>(R.layout.ui_item_viewpager,parent){
     init {
         val viewpager = itemView.viewpager
@@ -79,7 +107,7 @@ class ViewPagerVH(parent: ViewGroup) : GroupHolder<String>(R.layout.ui_item_view
         viewpager.layoutParams = p
         viewpager.adapter = SimplePagerAdapter()
 
-        viewpager.addOnPageChangeListener(object :ViewPager.SimpleOnPageChangeListener(){
+        viewpager.addOnPageChangeListener(object : ViewPager.SimpleOnPageChangeListener(){
             override fun onPageSelected(p0: Int) {
                 if(parent is RecyclerView){
                     /** 定位到吸顶位置*/

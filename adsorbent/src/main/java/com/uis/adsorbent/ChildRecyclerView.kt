@@ -7,13 +7,13 @@
 package com.uis.adsorbent
 
 import android.content.Context
-import android.support.v7.widget.RecyclerView
 import android.util.AttributeSet
 import android.view.MotionEvent
+import androidx.recyclerview.widget.RecyclerView
 import java.lang.ref.WeakReference
 import kotlin.math.max
 
-class ChildRecyclerView :RecyclerView,OnChildFlingListener{
+class ChildRecyclerView : RecyclerView{
     constructor(context: Context) : this(context,null)
     constructor(context: Context, attrs: AttributeSet?) : this(context, attrs,0)
     constructor(context: Context, attrs: AttributeSet?, defStyle: Int) : super(context, attrs, defStyle)
@@ -23,7 +23,7 @@ class ChildRecyclerView :RecyclerView,OnChildFlingListener{
     private var draggingY = 0
     private var draggingTime = 0L
     /** 记录上次的parent,避免递归频繁*/
-    private var parentView :WeakReference<com.uis.adsorbent.OnFlingListener>? = null
+    private var parentView :WeakReference<IFling>? = null
 
     init {
         addOnScrollListener(object :OnScrollListener(){
@@ -48,10 +48,6 @@ class ChildRecyclerView :RecyclerView,OnChildFlingListener{
         })
     }
 
-    override fun onChildFling(speed: Int) {
-        fling(0,speed)
-    }
-
     override fun dispatchTouchEvent(ev: MotionEvent): Boolean {
         if(enableConflict) {
             induceParentOfChildTopStatus()
@@ -61,16 +57,16 @@ class ChildRecyclerView :RecyclerView,OnChildFlingListener{
 
     private fun induceParentOfChildTopStatus(){
         /** true child在顶部*/
-        (parentView?.get() ?: {
+        (parentView?.get() ?: run {
             var pv = parent
             while (pv != null) {
-                if (pv is com.uis.adsorbent.OnFlingListener) {
+                if (pv is IFling) {
                     parentView = WeakReference(pv)
                     break
                 }
                 pv = pv.parent
             }
-            pv as? com.uis.adsorbent.OnFlingListener
-        }())?.onScrollTop(!canScrollVertically(-1),top)
+            (pv as? IFling)
+        })?.onStatus(!canScrollVertically(-1),top)
     }
 }

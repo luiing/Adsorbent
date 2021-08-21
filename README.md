@@ -15,7 +15,7 @@
 ### USE by Kotlin
     implementation 'com.uis:adsorbent:0.5.7
     implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlin_version"
-    implementation "com.android.support:recyclerview-v7:$supportVer"
+    implementation "androidx.recyclerview:recyclerview:1.0.0"
 
 ``` 项目中使用的是compileOnly,使用者需自行加入外部依赖库 ```
 

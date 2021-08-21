@@ -7,15 +7,15 @@
 package com.uis.adsorbent
 
 import android.content.Context
-import android.support.v7.widget.LinearLayoutManager
-import android.support.v7.widget.RecyclerView
 import android.util.AttributeSet
 import android.util.Log
 import android.view.*
+import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.RecyclerView
 import kotlin.math.abs
 import kotlin.math.max
 
-class ParentRecyclerView :RecyclerView, OnFlingListener {
+class ParentRecyclerView : RecyclerView, IFling {
     constructor(context: Context) : this(context,null)
     constructor(context: Context, attrs: AttributeSet?) : this(context, attrs,0)
     constructor(context: Context, attrs: AttributeSet?, defStyle: Int) : super(context, attrs, defStyle)
@@ -104,10 +104,10 @@ class ParentRecyclerView :RecyclerView, OnFlingListener {
                 child.getLocationOnScreen(locChild)
                 val childX = locChild[0]
                 val parentX = locParent[0]
-                if (childX >= parentX && childX< (parentX+parent.measuredWidth) && child is OnChildFlingListener) {
+                if (childX >= parentX && childX< (parentX+parent.measuredWidth) && child is RecyclerView) {
                     val step = (System.currentTimeMillis()-draggingTime).toInt()
                     val speed = velocityY - 1000*draggingY/max(1000,step)
-                    child.onChildFling(speed/2)
+                    child.fling(0,speed/2)
                     return true
                 }
                 return false
@@ -115,7 +115,7 @@ class ParentRecyclerView :RecyclerView, OnFlingListener {
         })
     }
 
-    override fun onScrollTop(isTop: Boolean,top:Int) {
+    override fun onStatus(isTop: Boolean,top:Int) {
         isChildTop = isTop
         childTop = top
     }
@@ -141,7 +141,7 @@ class ParentRecyclerView :RecyclerView, OnFlingListener {
     }
 
     private fun dispatchConflictTouchEvent(ev: MotionEvent){
-        //Log.e("xx","action=${ev.action},dx=${ev.x},dy=${ev.y}")
+        Log.e("xx","action=${ev.action},dx=${ev.x},dy=${ev.y}")
         if(null == velocity) velocity = VelocityTracker.obtain()
         velocity?.addMovement(ev)
         when(ev.action){
@@ -206,6 +206,7 @@ class ParentRecyclerView :RecyclerView, OnFlingListener {
                     dispatchSelfTouch(ev)
                 }
             } else if (isScrollBottom()) {
+                Log.e("xx","child touch..."+isChildTop+",up="+directUp)
                 if (ModelVertical == swipeModel && isChildTop && !directUp) {
                     dispatchSelfTouch(ev, true)
                 } else if (!disallowIntercept) {
